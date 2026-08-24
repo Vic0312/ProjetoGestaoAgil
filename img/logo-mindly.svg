@@ -1,0 +1,11 @@
+<svg width="184" height="52" viewBox="0 0 184 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#6F9D7A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 39.2C15 36.1 10.5 29.6 10.5 22.8C10.5 14.7 16.2 8.4 23.5 8.4C27.4 8.4 30.7 10.2 33 13C35.3 10.2 38.6 8.4 42.5 8.4C49.8 8.4 55.5 14.7 55.5 22.8C55.5 29.7 51 36.1 45 39.2L33 46L21 39.2Z"/>
+    <path d="M33 13V45.3"/>
+    <path d="M33 19.2C29.6 16 25.4 15.6 22.5 17.8C20 19.7 19 23 20 25.8"/>
+    <path d="M33 24.4C28.7 21.8 24.5 22.4 22.1 25.1C19.8 27.7 20.2 31.2 22.3 33.5"/>
+    <path d="M33 19.2C36.4 16 40.6 15.6 43.5 17.8C46 19.7 47 23 46 25.8"/>
+    <path d="M33 24.4C37.3 21.8 41.5 22.4 43.9 25.1C46.2 27.7 45.8 31.2 43.7 33.5"/>
+  </g>
+  <text x="68" y="34" fill="#557B62" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="600" letter-spacing="-0.8">Mindly</text>
+</svg>
