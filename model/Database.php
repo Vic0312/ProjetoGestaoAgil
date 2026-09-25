@@ -1,14 +1,17 @@
 <?php
-function config(): array {
+function config(): array
+{
     static $config;
     if ($config === null) {
         $config = require __DIR__ . '/../config.example.php';
         $local = __DIR__ . '/../config/local.php';
-        if (is_file($local)) $config = array_replace($config, require $local);
+        if (is_file($local))
+            $config = array_replace($config, require $local);
     }
     return $config;
 }
-function db(): PDO {
+function db(): PDO
+{
     static $pdo;
     if (!$pdo) {
         $c = config();
@@ -17,14 +20,17 @@ function db(): PDO {
     }
     return $pdo;
 }
-function query(string $sql, array $params = []): PDOStatement {
+function query(string $sql, array $params = []): PDOStatement
+{
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt;
 }
-function accountById($id) {
+function accountById($id)
+{
     return query('SELECT u.*, p.status_verificacao FROM usuarios u LEFT JOIN psicologos p ON p.usuario_id=u.id WHERE u.id=?', [$id])->fetch();
 }
-function accountByEmail(string $email) {
+function accountByEmail(string $email)
+{
     return query('SELECT u.*, p.status_verificacao FROM usuarios u LEFT JOIN psicologos p ON p.usuario_id=u.id WHERE u.email=?', [$email])->fetch();
 }

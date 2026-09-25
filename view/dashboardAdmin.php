@@ -1,7 +1,112 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('admin'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/dashboardAdmin.css"><title>Mindly | Visão geral</title></head><body><?php abrirLayout('admin','inicio','Painel administrativo','Acompanhamento geral da plataforma Mindly.',$currentUser['nome']); ?>
-<div class="admin-cards"><article class="cartao indicador"><span><?= icon('users') ?></span><div><small>Usuários cadastrados</small><strong><?= count($d['usuarios']) ?></strong><em><?= $d['novosUsuarios'] ?> novos no mês</em></div></article><article class="cartao indicador"><span><?= icon('user') ?></span><div><small>Psicólogos</small><strong><?= $d['totaisPerfis']['psicologo'] ?? 0 ?></strong><em><?= $d['psicologosAtivos'] ?> perfis ativos e aprovados</em></div></article><article class="cartao indicador"><span><?= icon('video') ?></span><div><small>Atendimentos no mês</small><strong><?= count($d['mes']) ?></strong><em><?= $d['statusMes']['concluida'] ?? 0 ?> concluídos</em></div></article><article class="cartao indicador"><span><?= icon('activity') ?></span><div><small>Atendimentos hoje</small><strong><?= count($d['hoje']) ?></strong><em><?= count(upcoming($d['hoje'])) ?> em andamento/próximos</em></div></article></div>
-<div class="admin-grid"><section class="cartao grafico-card"><div class="cartao-cabecalho"><div><h2>Atendimentos na plataforma</h2><p>Volume dos últimos 7 dias, por data agendada.</p></div><select disabled><option>Últimos 7 dias</option></select></div><?php $max=max(1,max($d['grafico'])); ?><div class="grafico"><div class="y"><?php for($i=4;$i>=0;$i--): ?><span><?= round($max*$i/4,1) ?></span><?php endfor; ?></div><div class="barras"><?php foreach($d['grafico'] as $date=>$total): ?><div><i style="height:<?= $total/$max*85 ?>%" title="<?= e($date) ?>: <?= $total ?> atendimentos"></i><span><?= substr($date,8,2).'/'.substr($date,5,2) ?>: <?= $total ?></span></div><?php endforeach; ?></div></div><?php if(!array_sum($d['grafico'])) emptyState('Nenhum atendimento registrado nos últimos 7 dias.'); ?></section><aside class="cartao atividades"><div class="cartao-cabecalho"><div><h2>Resumo de usuários</h2><p>Distribuição atual.</p></div></div><?php $n=count($d['usuarios']); $pac=$n?100*($d['totaisPerfis']['paciente']??0)/$n:0; $psi=$n?100*($d['totaisPerfis']['psicologo']??0)/$n:0; ?><div class="donut" style="background:conic-gradient(var(--verde-principal) 0 <?= $pac ?>%,var(--verde-claro) <?= $pac ?>% <?= $pac+$psi ?>%,#dce5df <?= $pac+$psi ?>% 100%)"><span><strong><?= $n ?></strong><small>usuários</small></span></div><div class="legenda"><div><i class="pac"></i><span>Pacientes</span><strong><?= $d['totaisPerfis']['paciente'] ?? 0 ?></strong></div><div><i class="psi"></i><span>Psicólogos</span><strong><?= $d['totaisPerfis']['psicologo'] ?? 0 ?></strong></div><div><i style="background:#dce5df"></i><span>Administradores</span><strong><?= $d['totaisPerfis']['admin'] ?? 0 ?></strong></div></div></aside></div><section class="cartao recentes"><div class="cartao-cabecalho"><div><h2>Atendimentos recentes</h2><p>Últimos atendimentos pela data agendada.</p></div><a class="link-verde" href="atendimentosAdmin.php">Ver todos</a></div><div class="tabela"><div class="linha cab"><span>Horário</span><span>Paciente</span><span>Psicólogo</span><span>Status</span></div><?php $recent=array_values(array_filter($d['consultas'],fn($c)=>mindlyTime($c['inicio_em'])<=mindlyTime())); foreach(array_slice(array_reverse($recent),0,5) as $c): ?><div class="linha"><span><?= dateLabel($c['inicio_em']) ?></span><span><?= e($c['paciente_nome']) ?></span><span><?= e($c['psicologo_nome']) ?></span><span><i class="tag"><?= e(statusLabel($c['status'])) ?></i></span></div><?php endforeach; if(!$recent) emptyState('Nenhum atendimento realizado até o momento.'); ?></div></section>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('admin'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/dashboardAdmin.css">
+    <title>Mindly | Visão geral</title>
+</head>
+
+<body>
+    <?php abrirLayout('admin', 'inicio', 'Painel administrativo', 'Acompanhamento geral da plataforma Mindly.', $currentUser['nome']); ?>
+    <div class="admin-cards">
+        <article class="cartao indicador"><span><?= icon('users') ?></span>
+            <div><small>Usuários
+                    cadastrados</small><strong><?= count($d['usuarios']) ?></strong><em><?= $d['novosUsuarios'] ?> novos
+                    no mês</em></div>
+        </article>
+        <article class="cartao indicador"><span><?= icon('user') ?></span>
+            <div><small>Psicólogos</small><strong><?= $d['totaisPerfis']['psicologo'] ?? 0 ?></strong><em><?= $d['psicologosAtivos'] ?>
+                    perfis ativos e aprovados</em></div>
+        </article>
+        <article class="cartao indicador"><span><?= icon('video') ?></span>
+            <div><small>Atendimentos no
+                    mês</small><strong><?= count($d['mes']) ?></strong><em><?= $d['statusMes']['concluida'] ?? 0 ?>
+                    concluídos</em></div>
+        </article>
+        <article class="cartao indicador"><span><?= icon('activity') ?></span>
+            <div><small>Atendimentos
+                    hoje</small><strong><?= count($d['hoje']) ?></strong><em><?= count(upcoming($d['hoje'])) ?> em
+                    andamento/próximos</em></div>
+        </article>
+    </div>
+    <div class="admin-grid">
+        <section class="cartao grafico-card">
+            <div class="cartao-cabecalho">
+                <div>
+                    <h2>Atendimentos na plataforma</h2>
+                    <p>Volume dos últimos 7 dias, por data agendada.</p>
+                </div><select disabled>
+                    <option>Últimos 7 dias</option>
+                </select>
+            </div><?php $max = max(1, max($d['grafico'])); ?>
+            <div class="grafico">
+                <div class="y"><?php for ($i = 4; $i >= 0; $i--): ?><span><?= round($max * $i / 4, 1) ?></span><?php endfor; ?>
+                </div>
+                <div class="barras"><?php foreach ($d['grafico'] as $date => $total): ?>
+                        <div><i style="height:<?= $total / $max * 85 ?>%"
+                                title="<?= e($date) ?>: <?= $total ?> atendimentos"></i><span><?= substr($date, 8, 2) . '/' . substr($date, 5, 2) ?>:
+                                <?= $total ?></span></div><?php endforeach; ?>
+                </div>
+            </div>
+            <?php if (!array_sum($d['grafico']))
+                emptyState('Nenhum atendimento registrado nos últimos 7 dias.'); ?>
+        </section>
+        <aside class="cartao atividades">
+            <div class="cartao-cabecalho">
+                <div>
+                    <h2>Resumo de usuários</h2>
+                    <p>Distribuição atual.</p>
+                </div>
+            </div>
+            <?php $n = count($d['usuarios']);
+            $pac = $n ? 100 * ($d['totaisPerfis']['paciente'] ?? 0) / $n : 0;
+            $psi = $n ? 100 * ($d['totaisPerfis']['psicologo'] ?? 0) / $n : 0; ?>
+            <div class="donut"
+                style="background:conic-gradient(var(--verde-principal) 0 <?= $pac ?>%,var(--verde-claro) <?= $pac ?>% <?= $pac + $psi ?>%,#dce5df <?= $pac + $psi ?>% 100%)">
+                <span><strong><?= $n ?></strong><small>usuários</small></span></div>
+            <div class="legenda">
+                <div><i
+                        class="pac"></i><span>Pacientes</span><strong><?= $d['totaisPerfis']['paciente'] ?? 0 ?></strong>
+                </div>
+                <div><i
+                        class="psi"></i><span>Psicólogos</span><strong><?= $d['totaisPerfis']['psicologo'] ?? 0 ?></strong>
+                </div>
+                <div><i
+                        style="background:#dce5df"></i><span>Administradores</span><strong><?= $d['totaisPerfis']['admin'] ?? 0 ?></strong>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <section class="cartao recentes">
+        <div class="cartao-cabecalho">
+            <div>
+                <h2>Atendimentos recentes</h2>
+                <p>Últimos atendimentos pela data agendada.</p>
+            </div><a class="link-verde" href="atendimentosAdmin.php">Ver todos</a>
+        </div>
+        <div class="tabela">
+            <div class="linha cab"><span>Horário</span><span>Paciente</span><span>Psicólogo</span><span>Status</span>
+            </div>
+            <?php $recent = array_values(array_filter($d['consultas'], fn($c) => mindlyTime($c['inicio_em']) <= mindlyTime()));
+            foreach (array_slice(array_reverse($recent), 0, 5) as $c): ?>
+                <div class="linha">
+                    <span><?= dateLabel($c['inicio_em']) ?></span><span><?= e($c['paciente_nome']) ?></span><span><?= e($c['psicologo_nome']) ?></span><span><i
+                            class="tag"><?= e(statusLabel($c['status'])) ?></i></span></div>
+            <?php endforeach;
+            if (!$recent)
+                emptyState('Nenhum atendimento realizado até o momento.'); ?>
+        </div>
+    </section>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

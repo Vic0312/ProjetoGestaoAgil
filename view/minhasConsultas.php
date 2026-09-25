@@ -1,8 +1,57 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('paciente'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/minhasConsultas.css"><title>Mindly | Minhas consultas</title></head><body><?php abrirLayout('paciente','consultas','Suas consultas','Acompanhe próximos atendimentos e seu histórico.',$currentUser['nome']); ?>
-<form class="tabs" method="get"><?php foreach(['proximas'=>'Próximas','realizadas'=>'Realizadas','canceladas'=>'Canceladas','todas'=>'Todas'] as $key=>$label): ?><button name="aba" value="<?= $key ?>" class="<?= $d['aba']===$key?'ativo':'' ?>"><?= $label ?><?php if($key==='proximas'): ?> <span><?= count($d['proximas']) ?></span><?php endif; ?></button><?php endforeach; ?></form>
-<div class="lista-consultas"><?php foreach($d['listaConsultas'] as $c): ?><article class="cartao consulta"><div class="data-bloco"><strong><?= dateLabel($c['inicio_em'],'d') ?></strong><span><?= dateLabel($c['inicio_em'],'m/Y') ?></span></div><div class="info"><div class="linha-nome"><div><h2><?= e($c['psicologo_nome']) ?></h2><p><?= e($c['area_atuacao'] ?? '') ?></p></div><span class="tag"><?= e(statusLabel($c['status'])) ?></span></div><div class="detalhes"><span><?= icon('clock') ?> <?= dateLabel($c['inicio_em'],'H:i') ?> · <?= (int)$c['duracao'] ?> min</span><span><?= icon('video') ?> Atendimento online</span></div></div><div class="acoes"><a class="botao botao-secundario" href="<?= e(publicLink('perfilPsicologo.php',$c['psicologo_id'])) ?>">Ver profissional</a><a class="botao botao-principal" href="<?= e(publicLink('salaAtendimento.php',$c['id'],'consulta_id')) ?>">Ver atendimento</a></div></article><?php endforeach; if(!$d['listaConsultas']): ?><article class="cartao consulta"><?php emptyState($d['aba']==='proximas'?'Você ainda não possui consultas agendadas.':($d['aba']==='realizadas'?'Nenhum atendimento realizado até o momento.':'Nenhuma consulta encontrada.')); ?></article><?php endif; ?></div>
-<div class="ajuda cartao"><?= icon('heart') ?><div><strong>Precisa remarcar?</strong><?php unavailable('Remarcação de consultas'); ?></div><a href="buscarPsicologos.php">Ver profissionais <?= icon('arrow') ?></a></div>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('paciente'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/minhasConsultas.css">
+    <title>Mindly | Minhas consultas</title>
+</head>
+
+<body>
+    <?php abrirLayout('paciente', 'consultas', 'Suas consultas', 'Acompanhe próximos atendimentos e seu histórico.', $currentUser['nome']); ?>
+    <form class="tabs" method="get">
+        <?php foreach (['proximas' => 'Próximas', 'realizadas' => 'Realizadas', 'canceladas' => 'Canceladas', 'todas' => 'Todas'] as $key => $label): ?><button
+                name="aba" value="<?= $key ?>"
+                class="<?= $d['aba'] === $key ? 'ativo' : '' ?>"><?= $label ?><?php if ($key === 'proximas'): ?>
+                    <span><?= count($d['proximas']) ?></span><?php endif; ?></button><?php endforeach; ?></form>
+    <div class="lista-consultas"><?php foreach ($d['listaConsultas'] as $c): ?>
+            <article class="cartao consulta">
+                <div class="data-bloco">
+                    <strong><?= dateLabel($c['inicio_em'], 'd') ?></strong><span><?= dateLabel($c['inicio_em'], 'm/Y') ?></span>
+                </div>
+                <div class="info">
+                    <div class="linha-nome">
+                        <div>
+                            <h2><?= e($c['psicologo_nome']) ?></h2>
+                            <p><?= e($c['area_atuacao'] ?? '') ?></p>
+                        </div><span class="tag"><?= e(statusLabel($c['status'])) ?></span>
+                    </div>
+                    <div class="detalhes"><span><?= icon('clock') ?>     <?= dateLabel($c['inicio_em'], 'H:i') ?> ·
+                            <?= (int) $c['duracao'] ?> min</span><span><?= icon('video') ?> Atendimento online</span></div>
+                </div>
+                <div class="acoes"><a class="botao botao-secundario"
+                        href="<?= e(publicLink('perfilPsicologo.php', $c['psicologo_id'])) ?>">Ver profissional</a><a
+                        class="botao botao-principal"
+                        href="<?= e(publicLink('salaAtendimento.php', $c['id'], 'consulta_id')) ?>">Ver atendimento</a></div>
+            </article><?php endforeach;
+    if (!$d['listaConsultas']): ?>
+            <article class="cartao consulta">
+                <?php emptyState($d['aba'] === 'proximas' ? 'Você ainda não possui consultas agendadas.' : ($d['aba'] === 'realizadas' ? 'Nenhum atendimento realizado até o momento.' : 'Nenhuma consulta encontrada.')); ?>
+            </article><?php endif; ?>
+    </div>
+    <div class="ajuda cartao"><?= icon('heart') ?>
+        <div><strong>Precisa remarcar?</strong><?php unavailable('Remarcação de consultas'); ?></div><a
+            href="buscarPsicologos.php">Ver profissionais <?= icon('arrow') ?></a>
+    </div>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

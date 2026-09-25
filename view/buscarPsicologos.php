@@ -1,8 +1,65 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('paciente'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/buscarPsicologos.css"><title>Mindly | Psicólogos</title></head><body><?php abrirLayout('paciente','psicologos','Encontre seu psicólogo','Conheça profissionais e escolha quem combina com você.',$currentUser['nome']); ?>
-<form method="get"><div class="barra-busca cartao"><div class="busca"><?= icon('search') ?><input type="search" name="q" value="<?= e($d['busca']) ?>" placeholder="Busque por nome ou área de atuação"></div><button class="botao botao-secundario"><?= icon('search') ?> Buscar</button></div><div class="filtros-rapidos"><button name="especialidade" value="" class="filtro <?= $d['especialidade']===''?'ativo':'' ?>">Todos</button><?php foreach($d['especialidades'] as $specialty): ?><button name="especialidade" value="<?= e($specialty) ?>" class="filtro <?= $d['especialidade']===$specialty?'ativo':'' ?>"><?= e($specialty) ?></button><?php endforeach; ?></div></form>
-<div class="resultado-topo"><div><strong>Profissionais disponíveis</strong><span><?= count($d['profissionais']) ?> psicólogos encontrados</span></div><select disabled aria-label="Ordenação"><option>Ordem alfabética</option></select></div><div class="grade-profissionais">
-<?php foreach($d['profissionais'] as $p): ?><article class="cartao profissional"><div class="topo-prof"><?php avatar($p,'avatar-foto grande'); ?><button class="favorito" disabled title="Favoritos ainda não disponíveis"><?= icon('heart') ?></button></div><h2><?= e($p['nome_profissional']) ?></h2><p class="crp">CRP <?= e($p['crp']) ?></p><div class="avaliacao"><?= icon('star') ?><strong><?= rating($p) ?></strong><span>· <?= (int)$p['avaliacoes'] ?> avaliações</span></div><div class="tags"><?php professionalTags($p); ?></div><p class="descricao"><?= e($p['biografia'] ? mb_strimwidth($p['biografia'],0,160,'…') : 'Biografia ainda não informada.') ?></p><div class="rodape-prof"><div><small>Próximo horário</small><strong><?= $p['proximo_horario'] ? dateLabel($p['proximo_horario']) : 'Sem horário cadastrado' ?></strong></div><a class="botao botao-principal" href="<?= e(publicLink('perfilPsicologo.php',$p['usuario_id'])) ?>">Ver perfil</a></div></article><?php endforeach; if(!$d['profissionais']): ?><article class="cartao profissional"><?php emptyState('Nenhum profissional disponível para esta busca.'); ?></article><?php endif; ?></div>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('paciente'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/buscarPsicologos.css">
+    <title>Mindly | Psicólogos</title>
+</head>
+
+<body>
+    <?php abrirLayout('paciente', 'psicologos', 'Encontre seu psicólogo', 'Conheça profissionais e escolha quem combina com você.', $currentUser['nome']); ?>
+    <form method="get">
+        <div class="barra-busca cartao">
+            <div class="busca"><?= icon('search') ?><input type="search" name="q" value="<?= e($d['busca']) ?>"
+                    placeholder="Busque por nome ou área de atuação"></div><button
+                class="botao botao-secundario"><?= icon('search') ?> Buscar</button>
+        </div>
+        <div class="filtros-rapidos"><button name="especialidade" value=""
+                class="filtro <?= $d['especialidade'] === '' ? 'ativo' : '' ?>">Todos</button><?php foreach ($d['especialidades'] as $specialty): ?><button
+                    name="especialidade" value="<?= e($specialty) ?>"
+                    class="filtro <?= $d['especialidade'] === $specialty ? 'ativo' : '' ?>"><?= e($specialty) ?></button><?php endforeach; ?>
+        </div>
+    </form>
+    <div class="resultado-topo">
+        <div><strong>Profissionais disponíveis</strong><span><?= count($d['profissionais']) ?> psicólogos
+                encontrados</span></div><select disabled aria-label="Ordenação">
+            <option>Ordem alfabética</option>
+        </select>
+    </div>
+    <div class="grade-profissionais">
+        <?php foreach ($d['profissionais'] as $p): ?>
+            <article class="cartao profissional">
+                <div class="topo-prof"><?php avatar($p, 'avatar-foto grande'); ?><button class="favorito" disabled
+                        title="Favoritos ainda não disponíveis"><?= icon('heart') ?></button></div>
+                <h2><?= e($p['nome_profissional']) ?></h2>
+                <p class="crp">CRP <?= e($p['crp']) ?></p>
+                <div class="avaliacao"><?= icon('star') ?><strong><?= rating($p) ?></strong><span>·
+                        <?= (int) $p['avaliacoes'] ?> avaliações</span></div>
+                <div class="tags"><?php professionalTags($p); ?></div>
+                <p class="descricao">
+                    <?= e($p['biografia'] ? mb_strimwidth($p['biografia'], 0, 160, '…') : 'Biografia ainda não informada.') ?>
+                </p>
+                <div class="rodape-prof">
+                    <div><small>Próximo
+                            horário</small><strong><?= $p['proximo_horario'] ? dateLabel($p['proximo_horario']) : 'Sem horário cadastrado' ?></strong>
+                    </div><a class="botao botao-principal"
+                        href="<?= e(publicLink('perfilPsicologo.php', $p['usuario_id'])) ?>">Ver perfil</a>
+                </div>
+            </article><?php endforeach;
+        if (!$d['profissionais']): ?>
+            <article class="cartao profissional"><?php emptyState('Nenhum profissional disponível para esta busca.'); ?>
+            </article><?php endif; ?>
+    </div>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

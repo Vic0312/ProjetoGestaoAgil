@@ -1,5 +1,6 @@
 <?php
-function icon($name, $class = '') {
+function icon($name, $class = '')
+{
     $icons = [
         'home' => '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/>',
         'search' => '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
@@ -37,69 +38,78 @@ function icon($name, $class = '') {
         'end' => '<path d="M6 8a8 8 0 1 0 12 0"/><path d="M12 3v9"/>',
     ];
     $svg = $icons[$name] ?? $icons['home'];
-    return '<svg class="icone '.$class.'" viewBox="0 0 24 24" aria-hidden="true">'.$svg.'</svg>';
+    return '<svg class="icone ' . $class . '" viewBox="0 0 24 24" aria-hidden="true">' . $svg . '</svg>';
 }
 
-function navItems($perfil) {
-    if ($perfil === 'paciente') return [
-        ['dashboardPaciente.php','home','Início','inicio'],
-        ['buscarPsicologos.php','search','Psicólogos','psicologos'],
-        ['minhasConsultas.php','calendar','Consultas','consultas'],
-        ['prontuarioPaciente.php','file','Meu histórico','historico'],
-        ['pagamentosPaciente.php','wallet','Pagamentos','pagamentos'],
-        ['perfilPaciente.php','user','Meu perfil','perfil'],
-    ];
-    if ($perfil === 'psicologo') return [
-        ['dashboardPsicologo.php','home','Início','inicio'],
-        ['agendaPsicologo.php','calendar','Agenda','agenda'],
-        ['disponibilidadePsicologo.php','clock','Disponibilidade','disponibilidade'],
-        ['pacientesPsicologo.php','users','Pacientes','pacientes'],
-        ['prontuarioPsicologo.php','file','Prontuários','prontuarios'],
-        ['perfilProfissional.php','user','Meu perfil','perfil'],
-        ['financeiroPsicologo.php','wallet','Financeiro','financeiro'],
-        ['notificacoesPsicologo.php','bell','Notificações','notificacoes'],
-    ];
+function navItems($perfil)
+{
+    if ($perfil === 'paciente')
+        return [
+            ['dashboardPaciente.php', 'home', 'Início', 'inicio'],
+            ['buscarPsicologos.php', 'search', 'Psicólogos', 'psicologos'],
+            ['minhasConsultas.php', 'calendar', 'Consultas', 'consultas'],
+            ['prontuarioPaciente.php', 'file', 'Meu histórico', 'historico'],
+            ['pagamentosPaciente.php', 'wallet', 'Pagamentos', 'pagamentos'],
+            ['perfilPaciente.php', 'user', 'Meu perfil', 'perfil'],
+        ];
+    if ($perfil === 'psicologo')
+        return [
+            ['dashboardPsicologo.php', 'home', 'Início', 'inicio'],
+            ['agendaPsicologo.php', 'calendar', 'Agenda', 'agenda'],
+            ['disponibilidadePsicologo.php', 'clock', 'Disponibilidade', 'disponibilidade'],
+            ['pacientesPsicologo.php', 'users', 'Pacientes', 'pacientes'],
+            ['prontuarioPsicologo.php', 'file', 'Prontuários', 'prontuarios'],
+            ['perfilProfissional.php', 'user', 'Meu perfil', 'perfil'],
+            ['financeiroPsicologo.php', 'wallet', 'Financeiro', 'financeiro'],
+            ['notificacoesPsicologo.php', 'bell', 'Notificações', 'notificacoes'],
+        ];
     return [
-        ['dashboardAdmin.php','home','Visão geral','inicio'],
-        ['usuariosAdmin.php','users','Usuários','usuarios'],
-        ['atendimentosAdmin.php','video','Atendimentos','atendimentos'],
-        ['relatoriosAdmin.php','chart','Relatórios','relatorios'],
+        ['dashboardAdmin.php', 'home', 'Visão geral', 'inicio'],
+        ['usuariosAdmin.php', 'users', 'Usuários', 'usuarios'],
+        ['atendimentosAdmin.php', 'video', 'Atendimentos', 'atendimentos'],
+        ['relatoriosAdmin.php', 'chart', 'Relatórios', 'relatorios'],
     ];
 }
 
-function abrirLayout($perfil, $ativo, $titulo, $subtitulo, $nome) {
+function abrirLayout($perfil, $ativo, $titulo, $subtitulo, $nome)
+{
     global $currentUser, $d;
     $nome = e($currentUser['nome']);
-    if ($ativo === 'inicio' && in_array($perfil, ['paciente','psicologo'], true)) {
+    if ($ativo === 'inicio' && in_array($perfil, ['paciente', 'psicologo'], true)) {
         $primeiroNome = preg_split('/\s+/u', trim($currentUser['nome']))[0];
-        $titulo = 'Olá, '.e($primeiroNome).'!';
+        $titulo = 'Olá, ' . e($primeiroNome) . '!';
     }
     $perfilLabel = $perfil === 'paciente' ? 'Paciente' : ($perfil === 'psicologo' ? 'Psicólogo(a)' : 'Administrador');
-    $iniciais = e(mb_strtoupper(mb_substr($currentUser['nome'],0,1)));
+    $iniciais = e(mb_strtoupper(mb_substr($currentUser['nome'], 0, 1)));
     echo '<div class="app">';
     echo '<aside class="sidebar">';
     echo '<a class="sidebar-logo" href="home.php"><img src="../img/logo-mindly.svg" alt="Mindly"></a>';
-    echo '<div class="perfil-lateral"><span class="avatar avatar-pequeno">'.$iniciais.'</span><div><strong>'.$nome.'</strong><span>'.$perfilLabel.'</span></div></div>';
+    echo '<div class="perfil-lateral"><span class="avatar avatar-pequeno">' . $iniciais . '</span><div><strong>' . $nome . '</strong><span>' . $perfilLabel . '</span></div></div>';
     echo '<nav class="menu-lateral">';
     foreach (navItems($perfil) as $item) {
-        [$href,$ico,$label,$key] = $item;
+        [$href, $ico, $label, $key] = $item;
         $classe = $key === $ativo ? 'item-menu ativo' : 'item-menu';
-        echo '<a class="'.$classe.'" href="'.$href.'">'.icon($ico).'<span>'.$label.'</span></a>';
+        echo '<a class="' . $classe . '" href="' . $href . '">' . icon($ico) . '<span>' . $label . '</span></a>';
     }
     echo '</nav>';
-    echo '<div class="sidebar-rodape"><form method="post" action="../processamento/auth.php">'.csrfField().'<input type="hidden" name="acao" value="logout"><button class="item-menu" style="border:0;background:transparent;width:100%;cursor:pointer;font:inherit" type="submit">'.icon('logout').'<span>Sair</span></button></form></div>';
+    echo '<div class="sidebar-rodape"><form method="post" action="../processamento/auth.php">' . csrfField() . '<input type="hidden" name="acao" value="logout"><button class="item-menu" style="border:0;background:transparent;width:100%;cursor:pointer;font:inherit" type="submit">' . icon('logout') . '<span>Sair</span></button></form></div>';
     echo '</aside>';
     echo '<main class="area-app">';
-    echo '<header class="topbar"><div class="titulo-topbar"><h1>'.$titulo.'</h1><p>'.$subtitulo.'</p></div><div class="acoes-topbar"><details class="notificacoes"><summary class="botao-icone" aria-label="Notificações">'.icon('bell');
-    if (!empty($d['notificacoes'])) echo '<span class="contador-notificacoes">'.count($d['notificacoes']).'</span>';
+    echo '<header class="topbar"><div class="titulo-topbar"><h1>' . $titulo . '</h1><p>' . $subtitulo . '</p></div><div class="acoes-topbar"><details class="notificacoes"><summary class="botao-icone" aria-label="Notificações">' . icon('bell');
+    if (!empty($d['notificacoes']))
+        echo '<span class="contador-notificacoes">' . count($d['notificacoes']) . '</span>';
     echo '</summary><div class="painel-notificacoes"><h2>Notificações</h2>';
-    if (empty($d['notificacoes'])) emptyState('Você não possui novas notificações.');
+    if (empty($d['notificacoes']))
+        emptyState('Você não possui novas notificações.');
     foreach ($d['notificacoes'] ?? [] as $notification) {
-        echo '<article><strong>'.e($notification['titulo']).'</strong><p>'.nl2br(e($notification['mensagem'])).'</p><small>'.dateLabel($notification['criado_em']).'</small><form method="post" action="../processamento/profissional.php">'.csrfField().'<input type="hidden" name="acao" value="ler_notificacao"><input type="hidden" name="id" value="'.(int)$notification['id'].'"><button class="botao botao-suave">Marcar como lida</button></form></article>';
+        echo '<article><strong>' . e($notification['titulo']) . '</strong><p>' . nl2br(e($notification['mensagem'])) . '</p><small>' . dateLabel($notification['criado_em']) . '</small><form method="post" action="../processamento/profissional.php">' . csrfField() . '<input type="hidden" name="acao" value="ler_notificacao"><input type="hidden" name="id" value="' . (int) $notification['id'] . '"><button class="botao botao-suave">Marcar como lida</button></form></article>';
     }
-    echo '</div></details><span class="avatar">'.$iniciais.'</span></div></header>';
+    echo '</div></details><span class="avatar">' . $iniciais . '</span></div></header>';
     echo '<section class="conteudo-app">';
     showMessage();
 }
-function fecharLayout() { echo '</section></main></div>'; }
+function fecharLayout()
+{
+    echo '</section></main></div>';
+}
 ?>

@@ -1,6 +1,50 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('admin'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/usuariosAdmin.css"><title>Mindly | Usuários</title></head><body><?php abrirLayout('admin','usuarios','Usuários da plataforma','Acompanhe pacientes e psicólogos cadastrados.',$currentUser['nome']); ?>
-<form class="usuarios-toolbar cartao" method="get"><div class="busca"><?= icon('search') ?><input name="q" value="<?= e($d['busca']) ?>" placeholder="Buscar por nome ou e-mail"></div><div class="filtros"><?php foreach([''=>'Todos','paciente'=>'Pacientes','psicologo'=>'Psicólogos','admin'=>'Administradores'] as $key=>$label): ?><button name="perfil" value="<?= $key ?>" class="<?= $d['filtroPerfil']===$key?'ativo':'' ?>"><?= $label ?></button><?php endforeach; ?></div><button class="botao botao-secundario"><?= icon('search') ?> Buscar</button></form><section class="cartao tabela-card"><div class="tabela"><div class="linha cab"><span>Usuário</span><span>Tipo</span><span>Cadastro</span><span>Status</span><span></span></div><?php foreach($d['usuarios'] as $u): ?><div class="linha"><span class="usuario"><i class="avatar-foto"><?= e(initials($u['nome'])) ?></i><b><?= e($u['nome']) ?><small><?= e($u['email']) ?></small></b></span><span><i class="tag"><?= e(statusLabel($u['papel'])) ?></i></span><span><?= dateLabel($u['criado_em'],'d/m/Y') ?></span><span><i class="tag"><?= e(statusLabel($u['status'])) ?></i><?php if($u['status_verificacao']): ?><small>Verificação: <?= e(statusLabel($u['status_verificacao'])) ?></small><?php endif; ?></span><span><button disabled title="Gestão de usuários ainda não disponível"><?= icon('dots') ?></button></span></div><?php endforeach; if(!$d['usuarios']) emptyState('Nenhum usuário encontrado.'); ?></div><div class="paginacao"><span><?= count($d['usuarios']) ?> usuários encontrados</span></div><?php unavailable('Aprovação, suspensão e edição de usuários pela interface'); ?></section>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('admin'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/usuariosAdmin.css">
+    <title>Mindly | Usuários</title>
+</head>
+
+<body>
+    <?php abrirLayout('admin', 'usuarios', 'Usuários da plataforma', 'Acompanhe pacientes e psicólogos cadastrados.', $currentUser['nome']); ?>
+    <form class="usuarios-toolbar cartao" method="get">
+        <div class="busca"><?= icon('search') ?><input name="q" value="<?= e($d['busca']) ?>"
+                placeholder="Buscar por nome ou e-mail"></div>
+        <div class="filtros">
+            <?php foreach (['' => 'Todos', 'paciente' => 'Pacientes', 'psicologo' => 'Psicólogos', 'admin' => 'Administradores'] as $key => $label): ?><button
+                    name="perfil" value="<?= $key ?>"
+                    class="<?= $d['filtroPerfil'] === $key ? 'ativo' : '' ?>"><?= $label ?></button><?php endforeach; ?></div>
+        <button class="botao botao-secundario"><?= icon('search') ?> Buscar</button>
+    </form>
+    <section class="cartao tabela-card">
+        <div class="tabela">
+            <div class="linha cab">
+                <span>Usuário</span><span>Tipo</span><span>Cadastro</span><span>Status</span><span></span></div>
+            <?php foreach ($d['usuarios'] as $u): ?>
+                <div class="linha"><span class="usuario"><i
+                            class="avatar-foto"><?= e(initials($u['nome'])) ?></i><b><?= e($u['nome']) ?><small><?= e($u['email']) ?></small></b></span><span><i
+                            class="tag"><?= e(statusLabel($u['papel'])) ?></i></span><span><?= dateLabel($u['criado_em'], 'd/m/Y') ?></span><span><i
+                            class="tag"><?= e(statusLabel($u['status'])) ?></i><?php if ($u['status_verificacao']): ?><small>Verificação:
+                                <?= e(statusLabel($u['status_verificacao'])) ?></small><?php endif; ?></span><span><button
+                            disabled title="Gestão de usuários ainda não disponível"><?= icon('dots') ?></button></span>
+                </div><?php endforeach;
+            if (!$d['usuarios'])
+                emptyState('Nenhum usuário encontrado.'); ?>
+        </div>
+        <div class="paginacao"><span><?= count($d['usuarios']) ?> usuários encontrados</span></div>
+        <?php unavailable('Aprovação, suspensão e edição de usuários pela interface'); ?>
+    </section>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

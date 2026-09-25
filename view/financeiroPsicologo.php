@@ -1,5 +1,108 @@
-<?php require_once __DIR__.'/../controller/Auth.php'; $currentUser=requireRole('psicologo'); require_once __DIR__.'/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser); require_once __DIR__.'/componentes/componentes.php'; require_once __DIR__.'/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/financeiroPsicologo.css"><title>Mindly | Histórico financeiro</title></head><body><?php abrirLayout('psicologo','financeiro','Histórico financeiro','Dados reais dos seus atendimentos.',$currentUser['nome']); ?>
-<?php $paid=0;$pending=0;$refunded=0;foreach($d['pagamentos'] as $payment){if($payment['moeda']!=='BRL')continue;if($payment['status']==='aprovado' && $payment['pago_em'])$paid+=max(0,(float)$payment['valor']-(float)$payment['reembolsado']);if(in_array($payment['status'],['pendente','processando'],true))$pending+=(float)$payment['valor'];$refunded+=$payment['status']==='estornado'?(float)$payment['valor']:(float)$payment['reembolsado'];} ?>
-<div class="financeiro-indicadores"><article class="cartao"><h2>Efetivamente pagos (BRL)</h2><strong><?= money($paid) ?></strong><p>Pagamentos aprovados, descontados reembolsos concluídos. Não indica repasse à sua conta.</p></article><article class="cartao"><h2>Pagamentos pendentes</h2><strong><?= money($pending) ?></strong><p>Lançamentos pendentes ou em processamento.</p></article><article class="cartao"><h2>Estornos / reembolsos</h2><strong><?= money($refunded) ?></strong><p>Somente registros financeiros concluídos.</p></article></div><section class="cartao"><h2>Pagamentos vinculados aos atendimentos</h2><p>A confirmação financeira depende de conciliação com o provedor. O profissional não altera pagamentos.</p><div class="tabela-responsiva"><table><thead><tr><th>Consulta</th><th>Data</th><th>Valor</th><th>Status</th><th>Pagamento em</th><th>Reembolso</th></tr></thead><tbody><?php foreach($d['pagamentos'] as $payment): ?><tr><td><a href="salaAtendimentoPsicologo.php?consulta_id=<?= (int)$payment['consulta_id'] ?>">#<?= (int)$payment['consulta_id'] ?></a></td><td><?= dateLabel($payment['inicio_em']) ?></td><td><?= e($payment['moeda']) ?> <?= number_format((float)$payment['valor'],2,',','.') ?></td><td><?= e(statusLabel($payment['status'])) ?></td><td><?= dateLabel($payment['pago_em']) ?></td><td><?= number_format((float)$payment['reembolsado'],2,',','.') ?></td></tr><?php endforeach; ?></tbody></table></div><?php if(!$d['pagamentos'])emptyState('Nenhum pagamento registrado para seus atendimentos.'); ?></section><section class="cartao"><h2>Valores agendados — não representam recebimentos</h2><div class="tabela-responsiva"><table><thead><tr><th>Consulta</th><th>Paciente</th><th>Data</th><th>Valor original</th><th>Status</th></tr></thead><tbody><?php foreach(array_reverse($d['consultas']) as $c): ?><tr><td><a href="salaAtendimentoPsicologo.php?consulta_id=<?= (int)$c['id'] ?>">#<?= (int)$c['id'] ?></a></td><td><?= e($c['paciente_nome']) ?></td><td><?= dateLabel($c['inicio_em']) ?></td><td><?= money($c['valor']) ?></td><td><?= e(statusLabel($c['status'])) ?></td></tr><?php endforeach; ?></tbody></table></div><?php if(!$d['consultas'])emptyState('Nenhuma consulta registrada.'); ?></section>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('psicologo');
+require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/financeiroPsicologo.css">
+    <title>Mindly | Histórico financeiro</title>
+</head>
+
+<body>
+    <?php abrirLayout('psicologo', 'financeiro', 'Histórico financeiro', 'Dados reais dos seus atendimentos.', $currentUser['nome']); ?>
+    <?php $paid = 0;
+    $pending = 0;
+    $refunded = 0;
+    foreach ($d['pagamentos'] as $payment) {
+        if ($payment['moeda'] !== 'BRL')
+            continue;
+        if ($payment['status'] === 'aprovado' && $payment['pago_em'])
+            $paid += max(0, (float) $payment['valor'] - (float) $payment['reembolsado']);
+        if (in_array($payment['status'], ['pendente', 'processando'], true))
+            $pending += (float) $payment['valor'];
+        $refunded += $payment['status'] === 'estornado' ? (float) $payment['valor'] : (float) $payment['reembolsado'];
+    } ?>
+    <div class="financeiro-indicadores">
+        <article class="cartao">
+            <h2>Efetivamente pagos (BRL)</h2><strong><?= money($paid) ?></strong>
+            <p>Pagamentos aprovados, descontados reembolsos concluídos. Não indica repasse à sua conta.</p>
+        </article>
+        <article class="cartao">
+            <h2>Pagamentos pendentes</h2><strong><?= money($pending) ?></strong>
+            <p>Lançamentos pendentes ou em processamento.</p>
+        </article>
+        <article class="cartao">
+            <h2>Estornos / reembolsos</h2><strong><?= money($refunded) ?></strong>
+            <p>Somente registros financeiros concluídos.</p>
+        </article>
+    </div>
+    <section class="cartao">
+        <h2>Pagamentos vinculados aos atendimentos</h2>
+        <p>A confirmação financeira depende de conciliação com o provedor. O profissional não altera pagamentos.</p>
+        <div class="tabela-responsiva">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Consulta</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Pagamento em</th>
+                        <th>Reembolso</th>
+                    </tr>
+                </thead>
+                <tbody><?php foreach ($d['pagamentos'] as $payment): ?>
+                        <tr>
+                            <td><a
+                                    href="salaAtendimentoPsicologo.php?consulta_id=<?= (int) $payment['consulta_id'] ?>">#<?= (int) $payment['consulta_id'] ?></a>
+                            </td>
+                            <td><?= dateLabel($payment['inicio_em']) ?></td>
+                            <td><?= e($payment['moeda']) ?>     <?= number_format((float) $payment['valor'], 2, ',', '.') ?></td>
+                            <td><?= e(statusLabel($payment['status'])) ?></td>
+                            <td><?= dateLabel($payment['pago_em']) ?></td>
+                            <td><?= number_format((float) $payment['reembolsado'], 2, ',', '.') ?></td>
+                        </tr><?php endforeach; ?>
+                </tbody>
+            </table>
+        </div><?php if (!$d['pagamentos'])
+            emptyState('Nenhum pagamento registrado para seus atendimentos.'); ?>
+    </section>
+    <section class="cartao">
+        <h2>Valores agendados — não representam recebimentos</h2>
+        <div class="tabela-responsiva">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Consulta</th>
+                        <th>Paciente</th>
+                        <th>Data</th>
+                        <th>Valor original</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody><?php foreach (array_reverse($d['consultas']) as $c): ?>
+                        <tr>
+                            <td><a
+                                    href="salaAtendimentoPsicologo.php?consulta_id=<?= (int) $c['id'] ?>">#<?= (int) $c['id'] ?></a>
+                            </td>
+                            <td><?= e($c['paciente_nome']) ?></td>
+                            <td><?= dateLabel($c['inicio_em']) ?></td>
+                            <td><?= money($c['valor']) ?></td>
+                            <td><?= e(statusLabel($c['status'])) ?></td>
+                        </tr><?php endforeach; ?>
+                </tbody>
+            </table>
+        </div><?php if (!$d['consultas'])
+            emptyState('Nenhuma consulta registrada.'); ?>
+    </section>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

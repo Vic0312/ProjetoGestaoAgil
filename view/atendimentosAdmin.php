@@ -1,6 +1,58 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('admin'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/atendimentosAdmin.css"><title>Mindly | Atendimentos</title></head><body><?php abrirLayout('admin','atendimentos','Atendimentos','Acompanhe os agendamentos e sessões realizadas na plataforma.',$currentUser['nome']); ?>
-<div class="atend-topo"><article class="cartao mini"><span>Hoje</span><strong><?= count($d['hoje']) ?></strong><small>atendimentos</small></article><article class="cartao mini"><span>Em andamento</span><strong><?= count(array_filter($d['consultas'],fn($c)=>$c['status']==='em_andamento')) ?></strong><small>registrados com este status</small></article><article class="cartao mini"><span>Concluídos</span><strong><?= count(completed($d['hoje'])) ?></strong><small>hoje</small></article><article class="cartao mini"><span>Agendados</span><strong><?= count($d['proximas']) ?></strong><small>próximos/em andamento</small></article></div><section class="cartao atend-lista"><form class="toolbar" method="get"><div class="busca"><?= icon('search') ?><input name="q" value="<?= e($d['busca']) ?>" placeholder="Buscar paciente ou psicólogo"></div><button class="botao botao-secundario"><?= icon('filter') ?> Filtrar</button></form><div class="tabela"><div class="linha cab"><span>Data e hora</span><span>Paciente</span><span>Psicólogo</span><span>Modalidade</span><span>Status</span></div><?php $found=0; foreach(array_reverse($d['consultas']) as $c): if($d['busca']!=='' && mb_stripos($c['paciente_nome'].' '.$c['psicologo_nome'],$d['busca'])===false) continue; $found++; ?><div class="linha"><span><strong><?= dateLabel($c['inicio_em'],'d/m/Y') ?></strong><small><?= dateLabel($c['inicio_em'],'H:i') ?></small></span><span><?= e($c['paciente_nome']) ?></span><span><?= e($c['psicologo_nome']) ?></span><span><?= e($c['modalidade']) ?></span><span><i class="tag"><?= e(statusLabel($c['status'])) ?></i></span></div><?php endforeach; if(!$found) emptyState('Nenhum atendimento encontrado.'); ?></div></section>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('admin'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/atendimentosAdmin.css">
+    <title>Mindly | Atendimentos</title>
+</head>
+
+<body>
+    <?php abrirLayout('admin', 'atendimentos', 'Atendimentos', 'Acompanhe os agendamentos e sessões realizadas na plataforma.', $currentUser['nome']); ?>
+    <div class="atend-topo">
+        <article class="cartao mini">
+            <span>Hoje</span><strong><?= count($d['hoje']) ?></strong><small>atendimentos</small></article>
+        <article class="cartao mini"><span>Em
+                andamento</span><strong><?= count(array_filter($d['consultas'], fn($c) => $c['status'] === 'em_andamento')) ?></strong><small>registrados
+                com este status</small></article>
+        <article class="cartao mini">
+            <span>Concluídos</span><strong><?= count(completed($d['hoje'])) ?></strong><small>hoje</small></article>
+        <article class="cartao mini">
+            <span>Agendados</span><strong><?= count($d['proximas']) ?></strong><small>próximos/em andamento</small>
+        </article>
+    </div>
+    <section class="cartao atend-lista">
+        <form class="toolbar" method="get">
+            <div class="busca"><?= icon('search') ?><input name="q" value="<?= e($d['busca']) ?>"
+                    placeholder="Buscar paciente ou psicólogo"></div><button
+                class="botao botao-secundario"><?= icon('filter') ?> Filtrar</button>
+        </form>
+        <div class="tabela">
+            <div class="linha cab"><span>Data e
+                    hora</span><span>Paciente</span><span>Psicólogo</span><span>Modalidade</span><span>Status</span>
+            </div>
+            <?php $found = 0;
+            foreach (array_reverse($d['consultas']) as $c):
+                if ($d['busca'] !== '' && mb_stripos($c['paciente_nome'] . ' ' . $c['psicologo_nome'], $d['busca']) === false)
+                    continue;
+                $found++; ?>
+                <div class="linha">
+                    <span><strong><?= dateLabel($c['inicio_em'], 'd/m/Y') ?></strong><small><?= dateLabel($c['inicio_em'], 'H:i') ?></small></span><span><?= e($c['paciente_nome']) ?></span><span><?= e($c['psicologo_nome']) ?></span><span><?= e($c['modalidade']) ?></span><span><i
+                            class="tag"><?= e(statusLabel($c['status'])) ?></i></span></div>
+            <?php endforeach;
+            if (!$found)
+                emptyState('Nenhum atendimento encontrado.'); ?>
+        </div>
+    </section>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>

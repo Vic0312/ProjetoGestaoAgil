@@ -1,7 +1,107 @@
-<?php require_once __DIR__ . '/../controller/Auth.php'; $currentUser = requireRole('admin'); ?>
-<?php require_once __DIR__ . '/../controller/DadosController.php'; $d=loadPageData(basename(__FILE__),$currentUser);
-require_once __DIR__ . '/componentes/componentes.php'; require_once __DIR__ . '/componentes/dados.php'; ?>
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="../css/componentes.css"><link rel="stylesheet" href="../css/relatoriosAdmin.css"><title>Mindly | Relatórios</title></head><body><?php abrirLayout('admin','relatorios','Relatórios e indicadores','Indicadores básicos de utilização da plataforma.',$currentUser['nome']); ?>
-<?php $total=count($d['mes']);$done=$d['statusMes']['concluida'] ?? 0;$cancelled=$d['statusMes']['cancelada'] ?? 0; $rate=$total?100*$done/$total:0; $cancelRate=$total?100*$cancelled/$total:0; ?>
-<div class="rel-toolbar"><div><strong>Período analisado</strong><span><?= mindlyTime()->format('01/m/Y') ?> a <?= mindlyTime()->format('t/m/Y') ?></span></div><button class="botao botao-secundario" disabled title="Alteração de período ainda não disponível"><?= icon('calendar') ?> Alterar período</button><button class="botao botao-principal" disabled title="Exportação ainda não disponível"><?= icon('download') ?> Exportar</button></div><div class="kpis"><article class="cartao"><span>Taxa de conclusão</span><strong><?= number_format($rate,1,',','.') ?>%</strong><small>dos atendimentos com data no mês</small></article><article class="cartao"><span>Média diária</span><strong><?= number_format($total/(int)mindlyTime()->format('t'),1,',','.') ?></strong><small>considerando todos os dias do mês</small></article><article class="cartao"><span>Novos usuários</span><strong><?= $d['novosUsuarios'] ?></strong><small>no período</small></article><article class="cartao"><span>Psicólogos ativos</span><strong><?= $d['psicologosAtivos'] ?></strong><small>de <?= $d['totaisPerfis']['psicologo'] ?? 0 ?> cadastrados</small></article></div><div class="graficos-grid"><article class="cartao linha-card"><div class="cartao-cabecalho"><div><h2>Evolução de atendimentos</h2><p>Volume diário nos últimos 7 dias, por data agendada.</p></div></div><?php $max=max(1,max($d['grafico']));$points=[];$i=0;foreach($d['grafico'] as $n){$points[]=($i++*100).' '.(170-$n/$max*140);} $path='M'.implode(' L',$points); ?><div class="line-chart"><svg viewBox="0 0 600 190" preserveAspectRatio="none" role="img" aria-label="Volume diário de atendimentos"><path class="grid" d="M0 35H600M0 80H600M0 125H600M0 170H600"/><path class="area" d="<?= e($path) ?> L600 190 L0 190 Z"/><path class="line" d="<?= e($path) ?>"/></svg><div class="labels"><?php foreach($d['grafico'] as $day=>$n): ?><span><?= substr($day,8,2).'/'.substr($day,5,2) ?>: <?= $n ?></span><?php endforeach; ?></div></div><?php if(!array_sum($d['grafico'])) emptyState('Nenhum atendimento registrado nos últimos 7 dias.'); ?></article><article class="cartao status-card"><div class="cartao-cabecalho"><div><h2>Status dos atendimentos</h2><p>Distribuição no período.</p></div></div><div class="status-donut" style="background:conic-gradient(var(--verde-principal) 0 <?= $rate ?>%,#d9e6dc <?= $rate ?>% <?= $rate+$cancelRate ?>%,#eef2ef <?= $rate+$cancelRate ?>% 100%)"><span><strong><?= $total ?></strong><small>total</small></span></div><div class="status-legenda"><p><i class="a"></i>Concluídos <strong><?= $done ?></strong></p><p><i class="b"></i>Cancelados <strong><?= $cancelled ?></strong></p><p><i class="c"></i>Outros <strong><?= $total-$done-$cancelled ?></strong></p></div></article></div><section class="cartao resumo-mensal"><h2>Resumo do período</h2><div><article><span>Pacientes atendidos</span><strong><?= count(array_unique(array_column(completed($d['mes']),'paciente_id'))) ?></strong></article><article><span>Agendamentos criados no mês</span><strong><?= count(array_filter($d['consultas'],fn($c)=>mindlyTime($c['criado_em'])->format('Y-m')===mindlyTime()->format('Y-m'))) ?></strong></article><article><span>Consultas por psicólogo cadastrado</span><strong><?= number_format($total/max(1,$d['totaisPerfis']['psicologo'] ?? 0),1,',','.') ?></strong></article><article><span>Uso da videochamada</span><strong>Não disponível</strong></article></div></section>
-<?php fecharLayout(); ?></body></html>
+<?php require_once __DIR__ . '/../controller/Auth.php';
+$currentUser = requireRole('admin'); ?>
+<?php require_once __DIR__ . '/../controller/DadosController.php';
+$d = loadPageData(basename(__FILE__), $currentUser);
+require_once __DIR__ . '/componentes/componentes.php';
+require_once __DIR__ . '/componentes/dados.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="../css/componentes.css">
+    <link rel="stylesheet" href="../css/relatoriosAdmin.css">
+    <title>Mindly | Relatórios</title>
+</head>
+
+<body>
+    <?php abrirLayout('admin', 'relatorios', 'Relatórios e indicadores', 'Indicadores básicos de utilização da plataforma.', $currentUser['nome']); ?>
+    <?php $total = count($d['mes']);
+    $done = $d['statusMes']['concluida'] ?? 0;
+    $cancelled = $d['statusMes']['cancelada'] ?? 0;
+    $rate = $total ? 100 * $done / $total : 0;
+    $cancelRate = $total ? 100 * $cancelled / $total : 0; ?>
+    <div class="rel-toolbar">
+        <div><strong>Período analisado</strong><span><?= mindlyTime()->format('01/m/Y') ?> a
+                <?= mindlyTime()->format('t/m/Y') ?></span></div><button class="botao botao-secundario" disabled
+            title="Alteração de período ainda não disponível"><?= icon('calendar') ?> Alterar período</button><button
+            class="botao botao-principal" disabled title="Exportação ainda não disponível"><?= icon('download') ?>
+            Exportar</button>
+    </div>
+    <div class="kpis">
+        <article class="cartao"><span>Taxa de
+                conclusão</span><strong><?= number_format($rate, 1, ',', '.') ?>%</strong><small>dos atendimentos com data
+                no mês</small></article>
+        <article class="cartao"><span>Média
+                diária</span><strong><?= number_format($total / (int) mindlyTime()->format('t'), 1, ',', '.') ?></strong><small>considerando
+                todos os dias do mês</small></article>
+        <article class="cartao"><span>Novos usuários</span><strong><?= $d['novosUsuarios'] ?></strong><small>no
+                período</small></article>
+        <article class="cartao"><span>Psicólogos ativos</span><strong><?= $d['psicologosAtivos'] ?></strong><small>de
+                <?= $d['totaisPerfis']['psicologo'] ?? 0 ?> cadastrados</small></article>
+    </div>
+    <div class="graficos-grid">
+        <article class="cartao linha-card">
+            <div class="cartao-cabecalho">
+                <div>
+                    <h2>Evolução de atendimentos</h2>
+                    <p>Volume diário nos últimos 7 dias, por data agendada.</p>
+                </div>
+            </div>
+            <?php $max = max(1, max($d['grafico']));
+            $points = [];
+            $i = 0;
+            foreach ($d['grafico'] as $n) {
+                $points[] = ($i++ * 100) . ' ' . (170 - $n / $max * 140);
+            }
+            $path = 'M' . implode(' L', $points); ?>
+            <div class="line-chart"><svg viewBox="0 0 600 190" preserveAspectRatio="none" role="img"
+                    aria-label="Volume diário de atendimentos">
+                    <path class="grid" d="M0 35H600M0 80H600M0 125H600M0 170H600" />
+                    <path class="area" d="<?= e($path) ?> L600 190 L0 190 Z" />
+                    <path class="line" d="<?= e($path) ?>" />
+                </svg>
+                <div class="labels">
+                    <?php foreach ($d['grafico'] as $day => $n): ?><span><?= substr($day, 8, 2) . '/' . substr($day, 5, 2) ?>:
+                            <?= $n ?></span><?php endforeach; ?></div>
+            </div>
+            <?php if (!array_sum($d['grafico']))
+                emptyState('Nenhum atendimento registrado nos últimos 7 dias.'); ?>
+        </article>
+        <article class="cartao status-card">
+            <div class="cartao-cabecalho">
+                <div>
+                    <h2>Status dos atendimentos</h2>
+                    <p>Distribuição no período.</p>
+                </div>
+            </div>
+            <div class="status-donut"
+                style="background:conic-gradient(var(--verde-principal) 0 <?= $rate ?>%,#d9e6dc <?= $rate ?>% <?= $rate + $cancelRate ?>%,#eef2ef <?= $rate + $cancelRate ?>% 100%)">
+                <span><strong><?= $total ?></strong><small>total</small></span></div>
+            <div class="status-legenda">
+                <p><i class="a"></i>Concluídos <strong><?= $done ?></strong></p>
+                <p><i class="b"></i>Cancelados <strong><?= $cancelled ?></strong></p>
+                <p><i class="c"></i>Outros <strong><?= $total - $done - $cancelled ?></strong></p>
+            </div>
+        </article>
+    </div>
+    <section class="cartao resumo-mensal">
+        <h2>Resumo do período</h2>
+        <div>
+            <article><span>Pacientes
+                    atendidos</span><strong><?= count(array_unique(array_column(completed($d['mes']), 'paciente_id'))) ?></strong>
+            </article>
+            <article><span>Agendamentos criados no
+                    mês</span><strong><?= count(array_filter($d['consultas'], fn($c) => mindlyTime($c['criado_em'])->format('Y-m') === mindlyTime()->format('Y-m'))) ?></strong>
+            </article>
+            <article><span>Consultas por psicólogo
+                    cadastrado</span><strong><?= number_format($total / max(1, $d['totaisPerfis']['psicologo'] ?? 0), 1, ',', '.') ?></strong>
+            </article>
+            <article><span>Uso da videochamada</span><strong>Não disponível</strong></article>
+        </div>
+    </section>
+    <?php fecharLayout(); ?>
+</body>
+
+</html>
