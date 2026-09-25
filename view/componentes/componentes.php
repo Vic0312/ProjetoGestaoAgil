@@ -66,8 +66,14 @@ function navItems($perfil) {
 }
 
 function abrirLayout($perfil, $ativo, $titulo, $subtitulo, $nome) {
+    global $currentUser, $d;
+    $nome = e($currentUser['nome']);
+    if ($ativo === 'inicio' && in_array($perfil, ['paciente','psicologo'], true)) {
+        $primeiroNome = preg_split('/\s+/u', trim($currentUser['nome']))[0];
+        $titulo = 'Olá, '.e($primeiroNome).'!';
+    }
     $perfilLabel = $perfil === 'paciente' ? 'Paciente' : ($perfil === 'psicologo' ? 'Psicólogo(a)' : 'Administrador');
-    $iniciais = $perfil === 'paciente' ? 'AM' : ($perfil === 'psicologo' ? 'CS' : 'AD');
+    $iniciais = e(mb_strtoupper(mb_substr($currentUser['nome'],0,1)));
     echo '<div class="app">';
     echo '<aside class="sidebar">';
     echo '<a class="sidebar-logo" href="home.php"><img src="../img/logo-mindly.svg" alt="Mindly"></a>';
@@ -79,10 +85,17 @@ function abrirLayout($perfil, $ativo, $titulo, $subtitulo, $nome) {
         echo '<a class="'.$classe.'" href="'.$href.'">'.icon($ico).'<span>'.$label.'</span></a>';
     }
     echo '</nav>';
-    echo '<div class="sidebar-rodape"><a class="item-menu" href="login.php">'.icon('logout').'<span>Sair</span></a></div>';
+    echo '<div class="sidebar-rodape"><form method="post" action="../processamento/auth.php">'.csrfField().'<input type="hidden" name="acao" value="logout"><button class="item-menu" style="border:0;background:transparent;width:100%;cursor:pointer;font:inherit" type="submit">'.icon('logout').'<span>Sair</span></button></form></div>';
     echo '</aside>';
     echo '<main class="area-app">';
-    echo '<header class="topbar"><div class="titulo-topbar"><h1>'.$titulo.'</h1><p>'.$subtitulo.'</p></div><div class="acoes-topbar"><button class="botao-icone" aria-label="Notificações">'.icon('bell').'<span class="ponto-notificacao"></span></button><span class="avatar">'.$iniciais.'</span></div></header>';
+    echo '<header class="topbar"><div class="titulo-topbar"><h1>'.$titulo.'</h1><p>'.$subtitulo.'</p></div><div class="acoes-topbar"><details class="notificacoes"><summary class="botao-icone" aria-label="Notificações">'.icon('bell');
+    if (!empty($d['notificacoes'])) echo '<span class="ponto-notificacao"></span>';
+    echo '</summary><div class="painel-notificacoes"><h2>Notificações</h2>';
+    if (empty($d['notificacoes'])) emptyState('Você não possui novas notificações.');
+    foreach ($d['notificacoes'] ?? [] as $notification) {
+        echo '<article><strong>'.e($notification['titulo']).'</strong><p>'.nl2br(e($notification['mensagem'])).'</p><small>'.dateLabel($notification['criado_em']).'</small></article>';
+    }
+    echo '</div></details><span class="avatar">'.$iniciais.'</span></div></header>';
     echo '<section class="conteudo-app">';
 }
 function fecharLayout() { echo '</section></main></div>'; }

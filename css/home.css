@@ -649,3 +649,10 @@ input:focus-visible,
         animation-duration: 0.01ms !important;
     }
 }
+
+/* Orientações e erros de cadastro: complemento ao layout existente. */
+.orientacao-senha{font-size:12px;color:var(--texto-suave,#75817a)}
+.erro-campo,.mensagem-formulario{color:#b13a3a;font-size:12px;line-height:1.5}
+.erro-campo[hidden]{display:none}
+.controle-campo input[aria-invalid="true"]{outline:1px solid #b13a3a;outline-offset:2px}
+#campos-profissionais:not([hidden]){display:grid;gap:15px}
