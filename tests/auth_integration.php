@@ -59,7 +59,7 @@ try {
     query("UPDATE psicologos SET status_verificacao='aprovado',verificado_em=UTC_TIMESTAMP() WHERE usuario_id=?",[$sid]);
     check(location(submit($s,'login',['email'=>$psychEmail,'senha'=>$pass,'papel'=>'admin']),'view/dashboardPsicologo.php'),'login usa papel do banco');
     foreach($pages as $page) {
-        $own=str_contains(file_get_contents(__DIR__.'/../view/'.$page),"requireRole('psicologo')");
+        $own=$page!=='perfilPsicologo.php' && str_contains(file_get_contents(__DIR__.'/../view/'.$page),"requireRole('psicologo')");
         check(request($s,'view/'.$page)['status']===($own?200:403),'permissão psicólogo: '.$page);
     }
     query("UPDATE psicologos SET status_verificacao='rejeitado' WHERE usuario_id=?",[$sid]);
@@ -103,7 +103,7 @@ try {
 } finally {
     foreach($emails as $email) {
         $u=accountByEmail($email);if(!$u) continue;
-        foreach(['tokens_redefinicao_senha','tokens_login_persistente','consentimentos','pacientes','psicologos'] as $table) query("DELETE FROM $table WHERE usuario_id=?",[$u['id']]);
+        foreach(['notificacoes','tokens_redefinicao_senha','tokens_login_persistente','consentimentos','pacientes','psicologos'] as $table) query("DELETE FROM $table WHERE usuario_id=?",[$u['id']]);
         query('DELETE FROM usuarios WHERE id=?',[$u['id']]);
     }
     echo "Contas e tokens temporários removidos.\n";

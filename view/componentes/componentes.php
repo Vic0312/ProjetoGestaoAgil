@@ -56,6 +56,8 @@ function navItems($perfil) {
         ['pacientesPsicologo.php','users','Pacientes','pacientes'],
         ['prontuarioPsicologo.php','file','Prontuários','prontuarios'],
         ['perfilProfissional.php','user','Meu perfil','perfil'],
+        ['financeiroPsicologo.php','wallet','Financeiro','financeiro'],
+        ['notificacoesPsicologo.php','bell','Notificações','notificacoes'],
     ];
     return [
         ['dashboardAdmin.php','home','Visão geral','inicio'],
@@ -89,14 +91,15 @@ function abrirLayout($perfil, $ativo, $titulo, $subtitulo, $nome) {
     echo '</aside>';
     echo '<main class="area-app">';
     echo '<header class="topbar"><div class="titulo-topbar"><h1>'.$titulo.'</h1><p>'.$subtitulo.'</p></div><div class="acoes-topbar"><details class="notificacoes"><summary class="botao-icone" aria-label="Notificações">'.icon('bell');
-    if (!empty($d['notificacoes'])) echo '<span class="ponto-notificacao"></span>';
+    if (!empty($d['notificacoes'])) echo '<span class="contador-notificacoes">'.count($d['notificacoes']).'</span>';
     echo '</summary><div class="painel-notificacoes"><h2>Notificações</h2>';
     if (empty($d['notificacoes'])) emptyState('Você não possui novas notificações.');
     foreach ($d['notificacoes'] ?? [] as $notification) {
-        echo '<article><strong>'.e($notification['titulo']).'</strong><p>'.nl2br(e($notification['mensagem'])).'</p><small>'.dateLabel($notification['criado_em']).'</small></article>';
+        echo '<article><strong>'.e($notification['titulo']).'</strong><p>'.nl2br(e($notification['mensagem'])).'</p><small>'.dateLabel($notification['criado_em']).'</small><form method="post" action="../processamento/profissional.php">'.csrfField().'<input type="hidden" name="acao" value="ler_notificacao"><input type="hidden" name="id" value="'.(int)$notification['id'].'"><button class="botao botao-suave">Marcar como lida</button></form></article>';
     }
     echo '</div></details><span class="avatar">'.$iniciais.'</span></div></header>';
     echo '<section class="conteudo-app">';
+    showMessage();
 }
 function fecharLayout() { echo '</section></main></div>'; }
 ?>

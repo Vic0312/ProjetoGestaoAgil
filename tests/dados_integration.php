@@ -125,7 +125,7 @@ try {
     $clients['admin']=browserClient();sendForm($clients['admin'],'login',['email'=>$adminEmail,'senha'=>$pass]);
     foreach(glob(__DIR__.'/../view/*.php') as $file){
         $source=file_get_contents($file);if(!preg_match("/requireRole\('([^']+)'\)/",$source,$match)) continue;
-        $key=['paciente'=>'p1','psicologo'=>'s1','admin'=>'admin'][$match[1]];
+        $key=basename($file)==='perfilPsicologo.php'?'p1':['paciente'=>'p1','psicologo'=>'s1','admin'=>'admin'][$match[1]];
         $body=htmlPage($clients[$key],basename($file));
         verify(!str_contains($body,$private2) && !str_contains($body,$shared2),'sem vazamento entre contas: '.basename($file));
         if($match[1]==='admin') verify(!str_contains($body,$private1) && !str_contains($body,$shared1),'admin sem conteúdo clínico: '.basename($file));
@@ -142,7 +142,7 @@ try {
         foreach($created[$table] ?? [] as $id) query("DELETE FROM $table WHERE id=?",[$id]);
     }
     foreach($emails as $email){$u=accountByEmail($email);if(!$u) continue;
-        foreach(['consentimentos','pacientes','psicologos'] as $table) query("DELETE FROM $table WHERE usuario_id=?",[$u['id']]);
+        foreach(['notificacoes','consentimentos','pacientes','psicologos'] as $table) query("DELETE FROM $table WHERE usuario_id=?",[$u['id']]);
         query('DELETE FROM usuarios WHERE id=?',[$u['id']]);
     }
     verify((int)query('SELECT COUNT(*) FROM usuarios')->fetchColumn()===$original,'contas reais preservadas; fixtures removidas');

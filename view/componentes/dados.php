@@ -19,3 +19,16 @@ function safeReceipt(?string $url): ?string {
 function professionalTags(array $p): void {
     foreach(explode(', ',$p['especialidades'] ?? '') as $tag) if($tag!=='') echo '<span class="tag">'.e($tag).'</span>';
 }
+function operationFields(string $action): void {
+    echo csrfField().'<input type="hidden" name="acao" value="'.e($action).'">';
+}
+function oldOperation(string $action,string $key,$default='') {
+    global $d;
+    return ($d['anterior']['acao'] ?? '')===$action ? ($d['anterior']['dados'][$key] ?? $default) : $default;
+}
+function avatar(array $user,string $class='avatar-foto'): void {
+    $name=$user['nome_profissional'] ?? $user['nome'] ?? '';
+    if(!empty($user['avatar_url']) && preg_match('/^[a-f0-9]{48}\.(jpg|png)$/D',$user['avatar_url'])) {
+        echo '<img class="'.e($class).' foto-real" src="../processamento/avatar.php?id='.(int)($user['usuario_id'] ?? $user['id']).'" alt="Foto de '.e($name).'">';
+    } else echo '<span class="'.e($class).'">'.e(initials($name)).'</span>';
+}
