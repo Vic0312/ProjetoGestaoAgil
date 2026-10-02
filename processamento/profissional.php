@@ -22,7 +22,7 @@ if (in_array($action, ['registro', 'resumo'], true) && ctype_digit(input('pacien
 if ($action === 'agendar' && ctype_digit(input('psicologo_id')))
     $back .= '?psicologo_id=' . input('psicologo_id');
 if (in_array($action, ['confirmar', 'cancelar', 'remarcar', 'iniciar', 'concluir', 'ausencia'], true) && ctype_digit(input('consulta_id')))
-    $back = 'view/' . ($role === 'psicologo' ? 'salaAtendimentoPsicologo.php' : 'salaAtendimento.php') . '?consulta_id=' . input('consulta_id');
+    $back = 'view/' . ($role === 'psicologo' ? 'salaAtendimentoPsicologo.php' : 'minhasConsultas.php') . '?consulta_id=' . input('consulta_id') . '&acao=' . $action;
 try {
     $back = ProfissionalController::run($user, $action);
     unset($_SESSION['operacao_anterior']);

@@ -115,7 +115,7 @@ try {
         verify(str_contains($dash,$accounts[$key==='s1'?'p1':'p2']['nome']) && !str_contains($dash,$accounts[$key==='s1'?'p2':'p1']['nome']),'dashboard profissional individual: '.$key);
     }
     verify(str_contains(htmlPage($clients['s1'],'disponibilidadePsicologo.php'),'09:10') && !str_contains(htmlPage($clients['s2'],'disponibilidadePsicologo.php'),'BLOQUEIO-'.$tag),'disponibilidade e bloqueios individuais');
-    verify(str_contains(htmlPage($clients['p1'],'perfilPsicologo.php?psicologo_id='.$s1),'1 avaliações'),'avaliações reais no perfil público');
+    verify((bool) preg_match('/1\s+avaliações/u', htmlPage($clients['p1'],'perfilPsicologo.php?psicologo_id='.$s1)),'avaliações reais no perfil público');
     query("UPDATE psicologos SET status_verificacao='pendente' WHERE usuario_id=?",[$s2]);
     verify(http($clients['p1'],'view/perfilPsicologo.php?psicologo_id='.$s2)['status']===404,'perfil público pendente oculto');
     query("UPDATE psicologos SET status_verificacao='aprovado' WHERE usuario_id=?",[$s2]);

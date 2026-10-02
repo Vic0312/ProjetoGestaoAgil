@@ -17,6 +17,10 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
 
 <body>
     <?php abrirLayout('paciente', 'consultas', 'Suas consultas', 'Acompanhe próximos atendimentos e seu histórico.', $currentUser['nome']); ?>
+    <?php if ($d['consulta']): ?>
+        <a class="botao botao-suave" href="minhasConsultas.php">Voltar para minhas consultas</a>
+        <?php require __DIR__ . '/componentes/gestaoConsulta.php'; ?>
+    <?php endif; ?>
     <form class="tabs" method="get">
         <?php foreach (['proximas' => 'Próximas', 'realizadas' => 'Realizadas', 'canceladas' => 'Canceladas', 'todas' => 'Todas'] as $key => $label): ?><button
                 name="aba" value="<?= $key ?>"
@@ -40,7 +44,11 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                 <div class="acoes"><a class="botao botao-secundario"
                         href="<?= e(publicLink('perfilPsicologo.php', $c['psicologo_id'])) ?>">Ver profissional</a><a
                         class="botao botao-principal"
-                        href="<?= e(publicLink('salaAtendimento.php', $c['id'], 'consulta_id')) ?>">Ver atendimento</a></div>
+                        href="<?= e(publicLink('minhasConsultas.php', $c['id'], 'consulta_id')) ?>">Ver detalhes / gerenciar</a>
+                    <?php if (in_array($c['status'], ['aguardando_pagamento', 'confirmada'], true) && $c['inicio_em'] > gmdate('Y-m-d H:i:s')): ?>
+                        <a class="botao botao-suave" href="?consulta_id=<?= (int) $c['id'] ?>&amp;acao=remarcar#remarcar-consulta">Remarcar</a>
+                        <a class="botao botao-suave" href="?consulta_id=<?= (int) $c['id'] ?>&amp;acao=cancelar#cancelar-consulta">Cancelar</a>
+                    <?php endif; ?></div>
             </article><?php endforeach;
     if (!$d['listaConsultas']): ?>
             <article class="cartao consulta">
@@ -48,7 +56,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
             </article><?php endif; ?>
     </div>
     <div class="ajuda cartao"><?= icon('heart') ?>
-        <div><strong>Precisa remarcar?</strong><?php unavailable('Remarcação de consultas'); ?></div><a
+        <div><strong>Precisa remarcar?</strong><p>Abra sua consulta e escolha outro horário disponível do mesmo psicólogo.</p></div><a
             href="buscarPsicologos.php">Ver profissionais <?= icon('arrow') ?></a>
     </div>
     <?php fecharLayout(); ?>

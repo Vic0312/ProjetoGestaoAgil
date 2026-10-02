@@ -82,19 +82,25 @@ final class MindlyData
     {
         return query('SELECT nome FROM especialidades ORDER BY nome')->fetchAll(PDO::FETCH_COLUMN);
     }
-    public function slots(int $professional, ?int $limit = null): array
+    public function slots(int $professional, ?int $limit = null, ?int $excludeConsultation = null): array
     {
         if ($this->role === 'psicologo' && $professional !== $this->id)
             throw new LogicException('Agenda não autorizada.');
         if (!in_array($this->role, ['paciente', 'psicologo'], true))
             throw new LogicException('Perfil inválido.');
+        $params = [$professional];
+        $patientConflict = '';
+        if ($this->role === 'paciente') {
+            $patientConflict = " AND NOT EXISTS (SELECT 1 FROM consultas pc JOIN horarios_agenda ph ON ph.id=pc.horario_id WHERE pc.paciente_id=? AND pc.id<>? AND pc.status<>'cancelada' AND ph.inicio_em<h.fim_em AND ph.fim_em>h.inicio_em)";
+            array_push($params, $this->id, $excludeConsultation ?? 0);
+        }
         return query("SELECT h.id,h.inicio_em,h.fim_em FROM horarios_agenda h
             JOIN psicologos p ON p.usuario_id=h.psicologo_id JOIN usuarios u ON u.id=p.usuario_id
             WHERE h.psicologo_id=? AND h.status='livre' AND h.inicio_em>UTC_TIMESTAMP()
             AND p.status_verificacao='aprovado' AND u.status='ativo'
             AND NOT EXISTS (SELECT 1 FROM bloqueios_agenda b WHERE b.psicologo_id=h.psicologo_id AND b.inicio_em<h.fim_em AND b.fim_em>h.inicio_em)
             AND NOT EXISTS (SELECT 1 FROM consultas c JOIN horarios_agenda ch ON ch.id=c.horario_id WHERE c.psicologo_id=h.psicologo_id AND c.status<>'cancelada' AND ch.inicio_em<h.fim_em AND ch.fim_em>h.inicio_em)
-            ORDER BY h.inicio_em" . ($limit === null ? '' : ' LIMIT ' . max(1, min(100, $limit))), [$professional])->fetchAll();
+            $patientConflict ORDER BY h.inicio_em" . ($limit === null ? '' : ' LIMIT ' . max(1, min(100, $limit))), $params)->fetchAll();
     }
     public function availability(): array
     {

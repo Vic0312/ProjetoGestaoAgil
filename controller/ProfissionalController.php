@@ -60,7 +60,7 @@ final class ProfissionalController
             case 'agendar':
                 $id = $model->book(ProfessionalWorkflow::integer($data, 'horario_id'));
                 flash('Agendamento registrado. A confirmação financeira depende de pagamento válido.');
-                return 'view/salaAtendimento.php?consulta_id=' . $id;
+                return 'view/minhasConsultas.php?consulta_id=' . $id;
             case 'confirmar':
             case 'cancelar':
             case 'remarcar':
@@ -69,7 +69,7 @@ final class ProfissionalController
             case 'ausencia':
                 $id = $model->consultationAction(ProfessionalWorkflow::integer($data, 'consulta_id'), $action, $data);
                 flash($action === 'cancelar' ? 'Consulta cancelada. Eventual reembolso aguarda processamento financeiro.' : 'Atendimento atualizado com sucesso.');
-                return 'view/' . ($user['papel'] === 'psicologo' ? 'salaAtendimentoPsicologo.php' : 'salaAtendimento.php') . '?consulta_id=' . $id;
+                return 'view/' . ($user['papel'] === 'psicologo' ? 'salaAtendimentoPsicologo.php' : 'minhasConsultas.php') . '?consulta_id=' . $id;
             case 'registro':
             case 'resumo':
                 $patient = $model->record($data, $action === 'resumo');

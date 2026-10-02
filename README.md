@@ -1,5 +1,27 @@
 # Mindly — autenticação PHP/MySQL
 
+## Atualização: tarefas #47, #48 e #49
+
+Esta seção descreve o estado atual dessas tarefas e substitui as indicações antigas abaixo de que edição de perfil, agendamento, cancelamento e remarcação estariam indisponíveis.
+
+Análise anterior às alterações: a aplicação usa `view/`, `controller/`, `model/` e endpoints POST em `processamento/`, com PDO/MySQL, sessão, CSRF e componentes visuais compartilhados. `MindlyData` já consultava dados por conta e `ProfessionalWorkflow` já implementava disponibilidade, reserva, cancelamento e remarcação transacionais. O perfil do paciente era somente leitura; a área de consultas tinha filtros funcionais, mas encaminhava a gestão à sala de atendimento e ainda anunciava remarcação indisponível. As tabelas existentes atendem às três tarefas.
+
+- **#47:** edição de nome, e-mail, telefone opcional e nascimento opcional, com validações no servidor, e-mail único, mensagens, preservação de campos em erro e gravação transacional em `usuarios`/`pacientes`. O ID vem da sessão. A mudança de e-mail invalida a verificação anterior e tokens antigos de recuperação/verificação.
+- **#48:** busca, perfil público e reserva existentes reaproveitados. Horários conflitantes com outras consultas do paciente deixam de ser anunciados como livres. A reserva leva aos detalhes em Minhas consultas. Acesso à agenda sem profissional orienta a busca, sem links com ID zero. Mantidos os locks, validação de disponibilidade, preço do banco e restrição única de ocupação.
+- **#49:** detalhes, histórico de status, cancelamento e remarcação integrados a Minhas consultas. Reutilizadas as operações existentes: remarcação cancela a original, cria uma reserva do mesmo psicólogo com `consulta_origem_id`, preserva preço e libera o horário anterior. Paciente e profissional consultam os mesmos registros. O status continua visível em telas pequenas.
+
+**Banco:** nenhuma mudança de estrutura e nenhum SQL adicional necessário. Não reimporte `mindly.sql`. As reservas continuam usando a regra financeira existente (`aguardando_pagamento`); agendar não simula pagamento nem implementa videochamada. O perfil profissional não foi alterado.
+
+Validação local com Apache/MySQL e PHP do XAMPP:
+
+```powershell
+C:\xampp\php\php.exe tests/auth_integration.php
+C:\xampp\php\php.exe tests/dados_integration.php
+C:\xampp\php\php.exe tests/paciente_integration.php
+```
+
+As suítes criam apenas dados temporários e os removem ao terminar. A nova suíte verifica edição/persistência, validações, CSRF, isolamento entre contas, disponibilidade gerada pelo profissional, reserva, conflito de horários, duas reservas simultâneas, remarcação inválida e válida, histórico, cancelamento, integração com a agenda profissional e destinos locais dos links/formulários. A verificação antiga de avaliações foi ajustada para aceitar espaços e quebras de linha no HTML. A inspeção visual em navegador permanece pendente; a ferramenta de automação do navegador não estava disponível nesta sessão.
+
 Cadastro, login, sessão, logout e recuperação de senha integrados ao banco `mindly`. Todas as telas restritas exibem dados reais consultados por conta/perfil e estados vazios quando não há registros. As operações de agendamento, cobrança, videochamada e edição de prontuário ainda não estão disponíveis; seus controles ficam desativados e identificados na interface.
 
 ## Executar no XAMPP

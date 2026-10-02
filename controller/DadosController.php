@@ -125,7 +125,7 @@ function pageData(string $page, array $user): array
                     exit('Registro não encontrado.');
                 }
                 $d['historicoStatus'] = $model->statusHistory($id);
-                $d['horarios'] = $model->slots((int) $d['consulta']['psicologo_id']);
+                $d['horarios'] = $model->slots((int) $d['consulta']['psicologo_id'], null, $id);
             }
             break;
         case 'financeiroPsicologo.php':
@@ -156,6 +156,16 @@ function pageData(string $page, array $user): array
             break;
     }
     if ($page === 'minhasConsultas.php') {
+        $id = requestId('consulta_id');
+        if ($id !== null) {
+            $d['consulta'] = $model->consultations($id)[0] ?? null;
+            if (!$d['consulta']) {
+                http_response_code(404);
+                exit('Registro não encontrado.');
+            }
+            $d['historicoStatus'] = $model->statusHistory($id);
+            $d['horarios'] = $model->slots((int) $d['consulta']['psicologo_id'], null, $id);
+        }
         $d['aba'] = requestText('aba') ?: 'proximas';
         if (!in_array($d['aba'], ['proximas', 'realizadas', 'canceladas', 'todas'], true))
             $d['aba'] = 'proximas';

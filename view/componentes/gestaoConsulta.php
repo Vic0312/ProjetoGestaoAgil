@@ -1,6 +1,7 @@
 <?php if ($c = $d['consulta']): ?>
     <section class="cartao gestao-atendimento">
-        <h2>Gestão administrativa do atendimento #<?= (int) $c['id'] ?></h2>
+        <h2><?= $currentUser['papel'] === 'paciente' ? 'Detalhes da consulta' : 'Gestão administrativa do atendimento' ?> #<?= (int) $c['id'] ?></h2>
+        <?php if ($currentUser['papel'] === 'paciente'): ?><p>Psicólogo(a): <?= e($c['psicologo_nome']) ?> · Horário de São Paulo</p><?php endif; ?>
         <p><?= e(statusLabel($c['status'])) ?> · <?= money($c['valor']) ?> · <?= dateLabel($c['inicio_em']) ?></p>
         <?php if ($c['consulta_origem_id']): ?>
             <p>Remarcação da consulta #<?= (int) $c['consulta_origem_id'] ?>.</p><?php endif; ?>
@@ -30,7 +31,7 @@
                         href="prontuarioPsicologo.php?paciente_id=<?= (int) $c['paciente_id'] ?>">Abrir prontuário</a><?php endif; ?>
             <?php endif; ?>
             <?php if (in_array($c['status'], ['aguardando_pagamento', 'confirmada'], true) && $c['inicio_em'] > gmdate('Y-m-d H:i:s')): ?>
-                <details>
+                <details id="cancelar-consulta" <?= requestText('acao') === 'cancelar' ? 'open' : '' ?>>
                     <summary>Cancelar consulta</summary>
                     <form class="form-operacao" method="post" action="../processamento/profissional.php">
                         <?php operationFields('cancelar'); ?><input type="hidden" name="consulta_id"
@@ -40,8 +41,9 @@
                             automático.</p><button class="botao botao-secundario">Confirmar cancelamento</button>
                     </form>
                 </details>
-                <details>
+                <details id="remarcar-consulta" <?= requestText('acao') === 'remarcar' ? 'open' : '' ?>>
                     <summary>Remarcar consulta</summary>
+                    <?php if (!$d['horarios']) emptyState('Nenhum novo horário disponível. Sua consulta atual será mantida.'); ?>
                     <form class="form-operacao" method="post" action="../processamento/profissional.php">
                         <?php operationFields('remarcar'); ?><input type="hidden" name="consulta_id"
                             value="<?= (int) $c['id'] ?>"><label>Novo horário<select name="horario_id" required>

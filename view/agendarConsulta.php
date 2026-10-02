@@ -24,6 +24,12 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
         $selected = $d['horarios'] ? mindlyTime($d['horarios'][0]['inicio_em']) : mindlyTime();
     $calendar = $selected->modify('first day of this month')->setTime(0, 0);
     $slots = array_values(array_filter($d['horarios'], fn($h) => mindlyTime($h['inicio_em'])->format('Y-m-d') === $selected->format('Y-m-d'))); ?>
+    <?php if (!$p): ?>
+        <section class="cartao etapas">
+            <?php emptyState('Selecione um psicólogo para consultar os horários disponíveis.'); ?>
+            <a class="botao botao-principal" href="buscarPsicologos.php">Buscar psicólogos</a>
+        </section>
+    <?php else: ?>
     <div class="agendamento-grid">
         <section class="cartao etapas">
             <div class="passos">
@@ -88,7 +94,8 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
             <p>Pagamento externo e videochamada ainda não disponíveis.</p>
         </aside>
     </div>
-    <?php fecharLayout(); ?>
+    <?php endif;
+    fecharLayout(); ?>
 </body>
 
 </html>

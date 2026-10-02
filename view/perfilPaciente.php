@@ -33,19 +33,19 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                 <div>
                     <h2>Informações pessoais</h2>
                     <p>Dados utilizados no seu perfil Mindly.</p>
-                </div><button class="botao botao-secundario" disabled><?= icon('edit') ?> Editar</button>
-            </div><?php unavailable('Edição de perfil'); ?>
-            <form>
+                </div><button form="perfil-paciente" class="botao botao-principal"><?= icon('edit') ?> Salvar alterações</button>
+            </div>
+            <form id="perfil-paciente" method="post" action="../processamento/paciente.php">
+                <?php operationFields('perfil_paciente'); ?>
                 <div class="grade-campos">
-                    <div class="campo"><label>Nome completo</label><input value="<?= e($currentUser['nome']) ?>"
-                            readonly></div>
-                    <div class="campo"><label>Data de nascimento</label><input
-                            value="<?= !empty($d['perfil']['data_nascimento']) ? e(DateTimeImmutable::createFromFormat('!Y-m-d', $d['perfil']['data_nascimento'])->format('d/m/Y')) : '' ?>"
-                            placeholder="Não informada" readonly></div>
-                    <div class="campo"><label>E-mail</label><input value="<?= e($currentUser['email']) ?>" readonly>
+                    <div class="campo"><label for="nome">Nome completo</label><input id="nome" name="nome" autocomplete="name" required minlength="2" maxlength="150"
+                            value="<?= e(oldOperation('perfil_paciente', 'nome', $currentUser['nome'])) ?>"></div>
+                    <div class="campo"><label for="nascimento">Data de nascimento (opcional)</label><input id="nascimento" name="data_nascimento" type="date" autocomplete="bday" min="1000-01-01" max="<?= mindlyTime()->format('Y-m-d') ?>"
+                            value="<?= e(oldOperation('perfil_paciente', 'data_nascimento', $d['perfil']['data_nascimento'] ?? '')) ?>"></div>
+                    <div class="campo"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="190" value="<?= e(oldOperation('perfil_paciente', 'email', $currentUser['email'])) ?>">
                     </div>
-                    <div class="campo"><label>Telefone</label><input value="<?= e($currentUser['telefone'] ?? '') ?>"
-                            placeholder="Não informado" readonly></div>
+                    <div class="campo"><label for="telefone">Telefone (opcional)</label><input id="telefone" name="telefone" type="tel" autocomplete="tel" maxlength="20" value="<?= e(oldOperation('perfil_paciente', 'telefone', $currentUser['telefone'] ?? '')) ?>"
+                            placeholder="(11) 99999-9999"></div>
                 </div>
                 <div class="secao-form">
                     <h3>Segurança</h3>

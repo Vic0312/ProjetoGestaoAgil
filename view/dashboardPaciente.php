@@ -60,7 +60,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                 <div class="acoes-consulta"><a class="botao botao-suave"
                         href="<?= e(publicLink('perfilPsicologo.php', $c['psicologo_id'])) ?>">Ver profissional</a><a
                         class="botao botao-principal"
-                        href="<?= e(publicLink('salaAtendimento.php', $c['id'], 'consulta_id')) ?>"><?= icon('video') ?> Ver
+                        href="<?= e(publicLink('minhasConsultas.php', $c['id'], 'consulta_id')) ?>"><?= icon('calendar') ?> Ver
                         atendimento</a></div>
             <?php else:
                 emptyState('Você ainda não possui consultas agendadas.'); endif; ?>
