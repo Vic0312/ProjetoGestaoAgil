@@ -7,6 +7,9 @@
             <p>Remarcação da consulta #<?= (int) $c['consulta_origem_id'] ?>.</p><?php endif; ?>
         <p>Estas ações registram o estado administrativo do atendimento. Não iniciam uma videochamada.</p>
         <div class="acoes-gestao">
+            <?php if ($currentUser['papel'] === 'paciente' && $c['status'] === 'aguardando_pagamento'): ?>
+                <a class="botao botao-principal" href="pagamentoConsulta.php?consulta_id=<?= (int) $c['id'] ?>">Acessar pagamento</a>
+            <?php endif; ?>
             <?php if ($currentUser['papel'] === 'psicologo'): ?>
                 <?php if ($c['status'] === 'aguardando_pagamento'): ?>
                     <form method="post" action="../processamento/profissional.php"><?php operationFields('confirmar'); ?><input

@@ -1,3 +1,81 @@
+# Entrega: dashboard, pagamentos e registros do paciente — 09/10/2026
+
+Esta seção descreve o estado atual e prevalece sobre os avisos antigos de pagamento indisponível abaixo.
+
+## 1. Dashboard do paciente
+
+Reutilizados MVC, sessão, consultas por conta, componentes, cards e CSS existentes. A saudação apresenta o nome autenticado, com escaping. Os indicadores mostram próximas consultas (incluindo atendimento em andamento, conforme a regra anterior), realizadas e canceladas. A próxima consulta é selecionada por data e horário futuros, com profissional, status e link para detalhes. Sem consulta futura, aparece o estado vazio. Atalhos funcionais para busca/agendamento, consultas, perfil, pagamentos e registros.
+
+## 2. Pagamentos
+
+A listagem inclui todas as consultas próprias, mesmo sem lançamento financeiro, com profissional, data/horário, valor, status da consulta, estado financeiro e saldo. O checkout exige confirmação explícita e POST com CSRF. O backend usa o paciente da sessão e o preço persistido da consulta, nunca os valores ou proprietários enviados pelo formulário.
+
+O pagamento simulado grava um lançamento aprovado em `pagamentos`, com `pago_em` UTC e `provedor=simulacao_academica`, confirma a consulta e grava histórico/notificações em uma única transação. O campo `metodo=pix` reutiliza o enum existente; o provedor e a interface identificam a simulação. Não há PIX real, cartão ou gateway. O saldo considera créditos e reembolsos da cadeia de remarcações usando a regra existente.
+
+Estados exibidos: Pendente, Pago, Cancelado e Processando. O histórico preserva os status originais dos lançamentos, incluindo Aprovado, e mostra data do pagamento e identificação de simulação. Consultas canceladas, vencidas, já confirmadas/pagas ou com pagamento em processamento não admitem pagamento simulado. Locks nas contas e consulta impedem pagamento duplicado, inclusive em duas sessões simultâneas. Lançamentos pendentes anteriores são cancelados quando substituídos pelo pagamento simulado.
+
+Cancelar uma consulta cancela sua cobrança pendente. Pagamentos aprovados continuam seguindo a regra anterior de solicitação de reembolso; não há estorno automático. Remarcar uma consulta paga mantém o crédito e não gera nova cobrança. Pendências em processamento continuam exigindo conciliação.
+
+## 3. Prontuário / registros
+
+Reutilizada a separação existente: `registros_prontuario` contém anotações privadas; `resumos_compartilhados` contém o texto explicitamente disponibilizado pelo profissional. O paciente vê seu histórico de consultas concluídas, em ordem decrescente de data, com profissional, data, horário, número da consulta, status e resumo compartilhado. Consultas sem resumo informam essa ausência; contas sem histórico apresentam “Nenhum registro disponível até o momento.”
+
+O SELECT usa exclusivamente `c.paciente_id` da conta autenticada e verifica que o autor do resumo corresponde ao psicólogo da consulta. Não consulta anotações privadas. IDs em URL/formulário não substituem o proprietário autenticado. Checkout de consulta alheia retorna 404; tentativa de pagamento alheio é recusada sem alteração no banco.
+
+## 4. Arquivos criados
+
+Nenhum. Toda a implementação aproveita arquivos existentes.
+
+## 5. Arquivos alterados
+
+- `README.md`: relatório e instruções atuais.
+- `controller/DadosController.php`: estado financeiro das consultas e indicadores do dashboard.
+- `controller/PacienteController.php`: ação de pagamento simulado.
+- `processamento/paciente.php`: endpoint POST protegido e mensagens.
+- `model/ProfessionalWorkflow.php`: saldo, elegibilidade, pagamento transacional e cancelamento de cobrança pendente.
+- `model/MindlyData.php`: status no histórico compartilhado e provedor no histórico financeiro.
+- `view/dashboardPaciente.php`: identificação, canceladas e atalhos.
+- `view/pagamentosPaciente.php`: consultas/cobranças e data/identificação dos pagamentos.
+- `view/pagamentoConsulta.php`: confirmação funcional da simulação.
+- `view/prontuarioPaciente.php`: horário, identificação/status da consulta e estado vazio.
+- `view/componentes/gestaoConsulta.php`: acesso ao pagamento nos detalhes da consulta pendente.
+- `css/pagamentosPaciente.css`: cards de cobranças e legibilidade de valor/status no celular.
+- `tests/paciente_integration.php`: cobertura dos novos fluxos financeiros e limpeza dos lançamentos temporários.
+- `tests/dados_integration.php`: expectativa da mensagem de registros vazios.
+
+## 6. Banco de dados
+
+Nenhuma alteração de estrutura, tabela, coluna, enum ou chave. Nenhuma migração ou SQL de instalação é necessário. Não reimporte `mindly.sql`. São reutilizadas `usuarios`, `pacientes`, `psicologos`, `horarios_agenda`, `consultas`, `pagamentos`, `reembolsos`, `historico_status_consultas`, `notificacoes` e `resumos_compartilhados`. A aplicação grava somente as operações reais solicitadas pela conta; testes criam fixtures temporárias e as removem.
+
+## 7. Testes e validações
+
+Executados no PHP/Apache/MySQL do XAMPP:
+
+```powershell
+C:\xampp\php\php.exe tests/auth_integration.php http://localhost/ProjetoGestaoAgil
+C:\xampp\php\php.exe tests/dados_integration.php http://localhost/ProjetoGestaoAgil
+C:\xampp\php\php.exe tests/paciente_integration.php http://localhost/ProjetoGestaoAgil
+```
+
+As três suítes passaram. Também passaram a verificação de sintaxe dos arquivos PHP e `git diff --check`.
+
+- Fluxo 1: dashboard identifica a sessão, calcula indicadores reais e possui link válido para detalhes da próxima consulta.
+- Fluxo 2: reserva com disponibilidade real, preço do banco, persistência e exibição nas áreas do paciente/profissional.
+- Fluxo 3: checkout, confirmação obrigatória, CSRF, pagamento aprovado persistido, sucesso, confirmação da consulta, reenvio recusado e duas sessões concorrentes gerando um único lançamento.
+- Fluxo 4: cancelamento pendente invalida cobrança e impede pagamento; cancelamento pago solicita reembolso. Remarcação paga preserva crédito.
+- Fluxo 5: resumos reais de duas contas isolados; anotações privadas não aparecem para pacientes; IDs alheios bloqueados no checkout e no backend financeiro; troca de sessão não mantém dados da conta anterior.
+- Fluxo 6: pacientes sem consultas, pagamentos ou registros recebem estados vazios e HTML completo, sem warnings/fatal errors.
+- Regressões #47–#49: perfil, validações, agendamento concorrente, conflitos, cancelamento, remarcação, histórico, agenda profissional e destinos locais de links/formulários.
+- Pagamento vencido e pagamento em processamento são recusados no backend.
+
+A suíte de autenticação inicialmente apontou para a porta 8085 sem servidor; foi executada novamente com sucesso no Apache em localhost.
+
+## 8. Pendências e limites de validação
+
+Inspeção visual em navegador não realizada: não havia ferramenta de navegador disponível nesta sessão. A validação HTTP/HTML/CSS e de destinos locais foi realizada. Não foram integrados gateway, estorno automático ou videochamada, conforme o escopo solicitado. As informações clínicas dependem de compartilhamento explícito pelo profissional, pela funcionalidade já existente. Nenhum commit foi criado.
+
+---
+
 # Mindly — autenticação PHP/MySQL
 
 ## Atualização: tarefas #47, #48 e #49

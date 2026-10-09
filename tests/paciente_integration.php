@@ -116,8 +116,72 @@ try {
         verify(str_contains($html, 'Remarcação da consulta #' . $original) && str_contains($html, 'Aguardando pagamento'), 'Remarcação refletida para ' . $key);
     }
     verify(count((new MindlyData($users['s1']))->consultations($id)) === 1 && count((new MindlyData($users['s2']))->consultations($id)) === 0, 'Consulta visível somente ao profissional correspondente');
+    verify(str_contains(page($clients['p1'], 'dashboardPaciente.php'), 'Paciente &lt;Teste&gt;'), 'Dashboard identifica a sessão atual');
+    verify(str_contains(page($clients['p1'], 'pagamentosPaciente.php'), 'Pagar consulta'), 'Reserva pendente aparece nas cobranças');
+    verify(str_contains(page($clients['p1'], 'pagamentoConsulta.php?consulta_id=' . $id), 'Confirmar pagamento simulado'), 'Checkout funcional para consulta própria');
+    $paymentData = ['acao' => 'pagar_consulta', 'consulta_id' => $id, 'confirmacao' => '1', 'valor' => '0', 'paciente_id' => $p2];
+    post($clients['p2'], 'paciente', $paymentData);
+    verify(!query('SELECT id FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn(), 'Outro paciente não pode pagar');
+    verify(http($clients['p1'], 'processamento/paciente.php', $paymentData)['status'] === 403, 'Pagamento exige CSRF');
+    post($clients['p1'], 'paciente', array_replace($paymentData, ['confirmacao' => '0']));
+    verify(consultation($id)['status'] === 'aguardando_pagamento', 'Pagamento exige confirmação explícita');
+    query("INSERT INTO pagamentos(consulta_id,metodo,status,valor) VALUES (?,'pix','processando',150)", [$id]);
+    $processingId = (int) db()->lastInsertId();
+    post($clients['p1'], 'paciente', $paymentData);
+    verify(consultation($id)['status'] === 'aguardando_pagamento' && (int) query('SELECT COUNT(*) FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn() === 1, 'Pagamento em processamento impede cobrança adicional');
+    query('DELETE FROM pagamentos WHERE id=?', [$processingId]);
+    $schedule = query('SELECT * FROM horarios_agenda WHERE id=?', [$new['horario_id']])->fetch();
+    query('UPDATE horarios_agenda SET inicio_em=?,fim_em=? WHERE id=?', [gmdate('Y-m-d H:i:s', time()-7200), gmdate('Y-m-d H:i:s', time()-3600), $schedule['id']]);
+    post($clients['p1'], 'paciente', $paymentData);
+    verify(!query('SELECT id FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn(), 'Consulta vencida não pode ser paga');
+    query('UPDATE horarios_agenda SET inicio_em=?,fim_em=? WHERE id=?', [$schedule['inicio_em'], $schedule['fim_em'], $schedule['id']]);
+    $secondSession = client();
+    post($secondSession, 'auth', ['acao' => 'login', 'email' => $profile['email'], 'senha' => $pass]);
+    $multiPayment = curl_multi_init();
+    try {
+        foreach ([$clients['p1'], $secondSession] as $session) {
+            $login = http($session, 'view/login.php');
+            preg_match('/name="csrf" value="([a-f0-9]+)"/', $login['body'], $token);
+            curl_setopt_array($session, [CURLOPT_URL => $base . '/processamento/paciente.php', CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => http_build_query($paymentData + ['csrf' => $token[1]])]);
+            curl_multi_add_handle($multiPayment, $session);
+        }
+        do {
+            $result = curl_multi_exec($multiPayment, $running);
+            if ($result !== CURLM_OK) throw new RuntimeException('Falha no pagamento concorrente.');
+            if ($running) curl_multi_select($multiPayment, 1);
+        } while ($running);
+        foreach ([$clients['p1'], $secondSession] as $session) {
+            verify(curl_getinfo($session, CURLINFO_HTTP_CODE) === 303, 'Pagamento simultâneo responde');
+            curl_multi_remove_handle($multiPayment, $session);
+        }
+        $successMessage = str_contains(page($clients['p1'], 'pagamentosPaciente.php'), 'Pagamento simulado registrado com sucesso.') || str_contains(page($secondSession, 'pagamentosPaciente.php'), 'Pagamento simulado registrado com sucesso.');
+    } finally { curl_multi_close($multiPayment); curl_close($secondSession); }
+    verify((int) query('SELECT COUNT(*) FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn() === 1, 'Duas sessões simultâneas geram somente um pagamento');
+    $payment = query('SELECT * FROM pagamentos WHERE consulta_id=?', [$id])->fetch();
+    verify($payment && $payment['status'] === 'aprovado' && $payment['valor'] === '150.00' && $payment['pago_em'] && $payment['provedor'] === 'simulacao_academica', 'Pagamento persiste valor do banco, data e identificação de simulação');
+    verify(consultation($id)['status'] === 'confirmada', 'Pagamento confirma consulta');
+    verify($successMessage, 'Mensagem de sucesso na sessão que confirmou o pagamento');
+    post($clients['p1'], 'paciente', $paymentData);
+    verify((int) query('SELECT COUNT(*) FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn() === 1, 'Reenvio não duplica pagamento');
+    verify(!str_contains(page($clients['p1'], 'pagamentoConsulta.php?consulta_id=' . $id), 'Confirmar pagamento simulado'), 'Consulta paga não oferece novo pagamento');
+    verify(str_contains(page($clients['p1'], 'dashboardPaciente.php'), 'Confirmada'), 'Dashboard reflete pagamento');
+    operation($clients['p1'], 'remarcar', ['consulta_id' => $id, 'horario_id' => $slots[4]['id'], 'motivo' => 'Crédito pago']);
+    $paidReschedule = query('SELECT * FROM consultas WHERE consulta_origem_id=?', [$id])->fetch();
+    verify($paidReschedule && $paidReschedule['status'] === 'confirmada', 'Remarcação preserva crédito pago');
+    $paidId = (int) $paidReschedule['id'];
+    post($clients['p1'], 'paciente', array_replace($paymentData, ['consulta_id' => $paidId]));
+    verify(!query('SELECT id FROM pagamentos WHERE consulta_id=?', [$paidId])->fetchColumn(), 'Remarcação paga não cobra novamente');
+    operation($clients['p1'], 'cancelar', ['consulta_id' => $paidId, 'motivo' => 'Teste reembolso']);
+    verify(query('SELECT status FROM reembolsos WHERE pagamento_id=?', [$payment['id']])->fetchColumn() === 'solicitado', 'Cancelamento pago mantém regra de reembolso');
+    // Uma nova reserva pendente exercita o cancelamento antes do pagamento.
+    operation($clients['p1'], 'agendar', ['horario_id' => $slots[2]['id']]);
+    $id = (int) query("SELECT id FROM consultas WHERE paciente_id=? AND status='aguardando_pagamento' ORDER BY id DESC LIMIT 1", [$p1])->fetchColumn();
+    query("INSERT INTO pagamentos(consulta_id,metodo,status,valor) VALUES (?,'pix','pendente',150)", [$id]);
     operation($clients['p1'], 'cancelar', ['consulta_id' => $id, 'motivo' => 'Cancelamento de teste']);
     verify(consultation($id)['status'] === 'cancelada' && query('SELECT status FROM horarios_agenda WHERE id=?', [$slots[2]['id']])->fetchColumn() === 'livre', 'Cancelamento preservado e horário liberado');
+    post($clients['p1'], 'paciente', array_replace($paymentData, ['consulta_id' => $id]));
+    verify(query('SELECT status FROM pagamentos WHERE consulta_id=?', [$id])->fetchColumn() === 'cancelado', 'Cancelamento invalida cobrança pendente e impede pagamento');
     $before = (int) query('SELECT COUNT(*) FROM historico_status_consultas WHERE consulta_id=?', [$id])->fetchColumn();
     operation($clients['p1'], 'cancelar', ['consulta_id' => $id, 'motivo' => 'Reenvio']);
     verify((int) query('SELECT COUNT(*) FROM historico_status_consultas WHERE consulta_id=?', [$id])->fetchColumn() === $before, 'Reenvio de cancelamento não duplica histórico');
@@ -149,7 +213,7 @@ try {
     } finally { curl_multi_close($multi); }
     verify((int) query("SELECT COUNT(*) FROM consultas WHERE horario_id=? AND status<>'cancelada'", [$slots[3]['id']])->fetchColumn() === 1, 'Concorrência permite exatamente uma reserva');
     verify(http($clients['p1'], 'processamento/profissional.php', ['acao' => 'agendar', 'horario_id' => $slots[4]['id']])['status'] === 403, 'Agendamento exige CSRF');
-    foreach (['dashboardPaciente.php', 'minhasConsultas.php', 'minhasConsultas.php?aba=todas', 'minhasConsultas.php?consulta_id=' . $id, 'perfilPaciente.php', 'buscarPsicologos.php', 'perfilPsicologo.php?psicologo_id=' . $s1, 'agendarConsulta.php', 'agendarConsulta.php?psicologo_id=' . $s1] as $route) {
+    foreach (['dashboardPaciente.php', 'pagamentosPaciente.php', 'pagamentoConsulta.php?consulta_id=' . $id, 'prontuarioPaciente.php', 'minhasConsultas.php', 'minhasConsultas.php?aba=todas', 'minhasConsultas.php?consulta_id=' . $id, 'perfilPaciente.php', 'buscarPsicologos.php', 'perfilPsicologo.php?psicologo_id=' . $s1, 'agendarConsulta.php', 'agendarConsulta.php?psicologo_id=' . $s1] as $route) {
         $html = page($clients['p1'], $route);
         $dom = new DOMDocument(); @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
         foreach ((new DOMXPath($dom))->query('//*[@href or @action or @src]') as $node) {
@@ -169,6 +233,8 @@ try {
         $consultations = query("SELECT id FROM consultas WHERE paciente_id IN ($marks)", $values)->fetchAll(PDO::FETCH_COLUMN);
         if ($consultations) {
             $cm = implode(',', array_fill(0, count($consultations), '?'));
+            query("DELETE r FROM reembolsos r JOIN pagamentos p ON p.id=r.pagamento_id WHERE p.consulta_id IN ($cm)", $consultations);
+            query("DELETE FROM pagamentos WHERE consulta_id IN ($cm)", $consultations);
             foreach (['notificacoes', 'historico_status_consultas'] as $table) query("DELETE FROM $table WHERE consulta_id IN ($cm)", $consultations);
             query("UPDATE consultas SET consulta_origem_id=NULL WHERE id IN ($cm)", $consultations);
             query("DELETE FROM consultas WHERE id IN ($cm)", $consultations);

@@ -18,12 +18,12 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
 <body><?php abrirLayout('paciente', 'inicio', 'Olá!', 'Seu espaço de cuidado e acompanhamento.', $currentUser['nome']); ?>
     <div class="boas-vindas cartao">
         <div><span class="mini-label">Seu cuidado, no seu ritmo</span>
-            <h2>Como você está se sentindo hoje?</h2>
+            <h2>Olá, <?= e($currentUser['nome']) ?></h2>
             <p>Organize suas próximas consultas e encontre apoio quando precisar.</p>
             <div class="acoes-boas-vindas"><a class="botao botao-principal"
                     href="buscarPsicologos.php"><?= icon('search') ?> Encontrar psicólogo</a><a
                     class="botao botao-secundario" href="minhasConsultas.php"><?= icon('calendar') ?> Minhas
-                    consultas</a></div>
+                    consultas</a><a class="botao botao-secundario" href="perfilPaciente.php">Meu perfil</a><a class="botao botao-secundario" href="pagamentosPaciente.php">Pagamentos</a><a class="botao botao-secundario" href="prontuarioPaciente.php">Prontuário / registros</a></div>
         </div>
         <div class="ilustracao-calma"><span class="circulo c1"></span><span class="circulo c2"></span><span
                 class="folha f1"></span><span class="folha f2"></span><span class="vaso"></span></div>
@@ -33,8 +33,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
             <div><strong><?= count($d['proximas']) ?></strong><span>consultas agendadas</span></div>
         </article>
         <article class="cartao resumo"><span class="icone-card"><?= icon('clock') ?></span>
-            <div><strong><?= dateLabel($d['proxima']['inicio_em'] ?? null, 'd/m/Y') ?></strong><span>próximo
-                    atendimento</span></div>
+            <div><strong><?= count($d['canceladas']) ?></strong><span>consultas canceladas</span></div>
         </article>
         <article class="cartao resumo"><span class="icone-card"><?= icon('heart') ?></span>
             <div><strong><?= count($d['realizadas']) ?></strong><span>consultas realizadas</span></div>

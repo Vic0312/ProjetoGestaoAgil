@@ -32,8 +32,8 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                         <div class="sessao">
                             <div class="sessao-topo">
                                 <div>
-                                    <h3><?= e($h['psicologo_nome']) ?></h3><span>Atendimento online</span>
-                                </div><span class="tag concluida">Concluída</span>
+                                    <h3><?= e($h['psicologo_nome']) ?></h3><span><?= dateLabel($h['inicio_em'], 'H:i') ?> · Consulta #<?= (int) $h['id'] ?></span>
+                                </div><span class="tag concluida"><?= e(statusLabel($h['status'])) ?></span>
                             </div>
                             <p><?= nl2br(e($h['texto'] ?? 'Nenhum resumo compartilhado para este atendimento.')) ?></p>
                             <?php if ($h['compartilhado_em']): ?><small>Compartilhado em
@@ -42,7 +42,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                     </article>
                 <?php endforeach;
             if (!$d['historico'])
-                emptyState('Nenhum atendimento realizado até o momento.'); ?>
+                emptyState('Nenhum registro disponível até o momento.'); ?>
             </div>
         </section>
         <aside class="cartao privacidade-card"><span class="escudo"><?= icon('shield') ?></span>

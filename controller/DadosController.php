@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../model/MindlyData.php';
+require_once __DIR__ . '/../model/ProfessionalWorkflow.php';
 function requestText(string $key): string
 {
     return isset($_GET[$key]) && is_string($_GET[$key]) ? mb_substr(trim($_GET[$key]), 0, 190) : '';
@@ -113,6 +114,10 @@ function pageData(string $page, array $user): array
         case 'pagamentosPaciente.php':
             $d['pagamentos'] = $model->payments();
             $d['metodos'] = $model->paymentMethods();
+            $workflow = new ProfessionalWorkflow($user);
+            foreach ($d['consultas'] as &$c)
+                $c['financeiro'] = $workflow->patientBilling((int) $c['id']);
+            unset($c);
             break;
         case 'pagamentoConsulta.php':
         case 'salaAtendimento.php':
@@ -191,6 +196,13 @@ function pageData(string $page, array $user): array
             $d['horaInicial'] = min($d['horaInicial'], (int) mindlyTime($c['inicio_em'])->format('G'));
             $d['horaFinal'] = max($d['horaFinal'], min(24, (int) mindlyTime($c['fim_em'])->format('G') + 1));
         }
+    }
+    if ($page === 'pagamentoConsulta.php' && $d['consulta'])
+        $d['financeiro'] = (new ProfessionalWorkflow($user))->patientBilling((int) $d['consulta']['id']);
+    if ($page === 'dashboardPaciente.php') {
+        $d['canceladas'] = array_values(array_filter($d['consultas'], fn($c) => $c['status'] === 'cancelada'));
+        $future = array_values(array_filter($d['proximas'], fn($c) => mindlyTime($c['inicio_em']) >= mindlyTime()));
+        $d['proxima'] = $future[0] ?? null;
     }
     $d['anterior'] = $_SESSION['operacao_anterior'] ?? [];
     unset($_SESSION['operacao_anterior']);

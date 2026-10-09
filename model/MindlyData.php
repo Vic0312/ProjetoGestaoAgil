@@ -133,7 +133,7 @@ final class MindlyData
     public function sharedHistory(): array
     {
         $this->only('paciente');
-        return query("SELECT c.id,h.inicio_em,COALESCE(NULLIF(p.nome_profissional,''),u.nome) psicologo_nome,s.texto,s.compartilhado_em
+        return query("SELECT c.id,c.status,h.inicio_em,COALESCE(NULLIF(p.nome_profissional,''),u.nome) psicologo_nome,s.texto,s.compartilhado_em
             FROM consultas c JOIN horarios_agenda h ON h.id=c.horario_id JOIN psicologos p ON p.usuario_id=c.psicologo_id JOIN usuarios u ON u.id=p.usuario_id
             LEFT JOIN resumos_compartilhados s ON s.consulta_id=c.id AND s.compartilhado_por_psicologo_id=c.psicologo_id
             WHERE c.paciente_id=? AND c.status='concluida' ORDER BY h.inicio_em DESC", [$this->id])->fetchAll();
@@ -141,7 +141,7 @@ final class MindlyData
     public function payments(): array
     {
         [$scope, $params] = $this->scope();
-        return query("SELECT pg.id,pg.consulta_id,pg.status,pg.valor,pg.moeda,pg.metodo,pg.pago_em,pg.vencimento_em,pg.recibo_url,h.inicio_em,
+        return query("SELECT pg.id,pg.provedor,pg.consulta_id,pg.status,pg.valor,pg.moeda,pg.metodo,pg.pago_em,pg.vencimento_em,pg.recibo_url,h.inicio_em,
             COALESCE(NULLIF(p.nome_profissional,''),u.nome) psicologo_nome,
             (SELECT COALESCE(SUM(r.valor),0) FROM reembolsos r WHERE r.pagamento_id=pg.id AND r.status='concluido') reembolsado
             FROM pagamentos pg JOIN consultas c ON c.id=pg.consulta_id JOIN horarios_agenda h ON h.id=c.horario_id

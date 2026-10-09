@@ -63,7 +63,7 @@ try {
         if($role==='paciente') {
             verify(str_contains($dash,'Você ainda não possui consultas agendadas.') && str_contains($dash,'<strong>0</strong><span>consultas realizadas</span>'),'indicadores zerados para novo paciente');
             verify(str_contains(htmlPage($clients[$key],'pagamentosPaciente.php'),'Você ainda não possui pagamentos registrados.'),'pagamentos vazios');
-            verify(str_contains(htmlPage($clients[$key],'prontuarioPaciente.php'),'Nenhum atendimento realizado até o momento.'),'histórico vazio');
+            verify(str_contains(htmlPage($clients[$key],'prontuarioPaciente.php'),'Nenhum registro disponível até o momento.'),'histórico vazio');
         } else verify(str_contains($dash,'Nenhum horário disponível cadastrado.'),'dashboard profissional vazio');
     }
     $p1=(int)$accounts['p1']['id'];$p2=(int)$accounts['p2']['id'];$s1=(int)$accounts['s1']['id'];$s2=(int)$accounts['s2']['id'];

@@ -43,6 +43,18 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
         </article>
     </div>
     <section class="cartao historico-pagamentos">
+        <div class="cartao-cabecalho"><div><h2>Consultas e cobranças</h2><p>O pagamento é simulado, sem cobrança real. Consultas canceladas não permitem pagamento.</p></div></div>
+        <div class="cobrancas">
+            <?php foreach (array_reverse($d['consultas']) as $c): ?>
+                <article class="cobranca">
+                    <div><strong><?= e($c['psicologo_nome']) ?></strong><p>Consulta #<?= (int) $c['id'] ?> · <?= dateLabel($c['inicio_em']) ?></p></div>
+                    <div><strong><?= money($c['valor']) ?></strong><p>Consulta: <?= e(statusLabel($c['status'])) ?></p><p>Pagamento: <?= e($c['financeiro']['status']) ?> · Saldo: <?= money($c['financeiro']['saldo']) ?></p></div>
+                    <a class="botao botao-secundario" href="pagamentoConsulta.php?consulta_id=<?= (int) $c['id'] ?>"><?= $c['financeiro']['pode_pagar'] ? 'Pagar consulta' : 'Ver cobrança' ?></a>
+                </article>
+            <?php endforeach; if (!$d['consultas']) emptyState('Você ainda não possui consultas relacionadas a pagamentos.'); ?>
+        </div>
+    </section>
+    <section class="cartao historico-pagamentos">
         <div class="cartao-cabecalho">
             <div>
                 <h2>Histórico de pagamentos</h2>
@@ -56,7 +68,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                 <span>Consulta</span><span>Profissional</span><span>Valor</span><span>Status</span><span>Recibo</span>
             </div><?php foreach ($d['pagamentos'] as $p): ?>
                 <div class="tr">
-                    <span><strong><?= dateLabel($p['inicio_em'], 'd/m/Y') ?></strong><small><?= dateLabel($p['inicio_em'], 'H:i') ?></small></span><span><?= e($p['psicologo_nome']) ?></span><span><?= $p['moeda'] === 'BRL' ? money($p['valor']) : e($p['moeda'] . ' ' . $p['valor']) ?><?php if ($p['reembolsado'] > 0): ?><small>Reembolsado:
+                    <span><strong><?= dateLabel($p['inicio_em'], 'd/m/Y') ?></strong><small><?= dateLabel($p['inicio_em'], 'H:i') ?></small><small>Pagamento: <?= dateLabel($p['pago_em']) ?></small><small><?= ($p['provedor'] ?? '') === 'simulacao_academica' ? 'Simulado' : '' ?></small></span><span><?= e($p['psicologo_nome']) ?></span><span><?= $p['moeda'] === 'BRL' ? money($p['valor']) : e($p['moeda'] . ' ' . $p['valor']) ?><?php if ($p['reembolsado'] > 0): ?><small>Reembolsado:
                                 <?= money($p['reembolsado']) ?></small><?php endif; ?></span><span><i
                             class="tag"><?= e(statusLabel($p['status'])) ?></i></span><span><?php if ($link = safeReceipt($p['recibo_url'])): ?><a
                                 class="download" href="<?= e($link) ?>" rel="noopener noreferrer" target="_blank"

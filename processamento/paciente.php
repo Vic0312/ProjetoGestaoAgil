@@ -2,6 +2,17 @@
 require_once __DIR__ . '/../controller/PacienteController.php';
 checkPost();
 $user = requireRole('paciente');
+if (input('acao') === 'pagar_consulta') {
+    try {
+        PacienteController::pagamento($user);
+    } catch (DomainException $error) {
+        flash($error->getMessage());
+    } catch (Throwable $error) {
+        error_log('Mindly: falha no pagamento simulado (' . get_class($error) . ').');
+        flash('Não foi possível registrar o pagamento. Tente novamente.');
+    }
+    redirect('view/pagamentosPaciente.php');
+}
 if (input('acao') !== 'perfil_paciente') {
     http_response_code(400);
     exit('Operação inválida.');

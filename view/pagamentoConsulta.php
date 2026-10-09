@@ -21,21 +21,20 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
     <div class="checkout-grid">
         <section class="cartao pagamento-form">
             <div class="seguranca-topo"><?= icon('shield') ?>
-                <div><strong>Pagamento da consulta</strong><span>Nenhuma cobrança é executada nesta tela.</span></div>
-            </div><?php unavailable('Pagamento por cartão ou PIX'); ?>
-            <h2>Forma de pagamento</h2>
-            <div class="metodos"><button disabled><?= icon('card') ?> Cartão</button><button disabled>PIX</button></div>
-            <form>
-                <div class="campo"><label>Número do cartão</label><input disabled
-                        placeholder="Pagamento ainda não disponível"></div>
-                <div class="grade-campos">
-                    <div class="campo"><label>Nome no cartão</label><input disabled></div>
-                    <div class="campo"><label>CPF</label><input disabled></div>
-                    <div class="campo"><label>Validade</label><input disabled></div>
-                    <div class="campo"><label>CVV</label><input disabled></div>
-                </div><label class="salvar"><input type="checkbox" disabled> Salvar cartão para próximos
-                    pagamentos</label>
-            </form>
+                <div><strong>Pagamento simulado</strong><span>Projeto acadêmico: nenhum dinheiro será cobrado.</span></div>
+            </div>
+            <?php if ($c): ?>
+                <h2><?= e($d['financeiro']['status']) ?></h2>
+                <p>Saldo a pagar: <?= money($d['financeiro']['saldo']) ?>.</p>
+                <?php if ($d['financeiro']['pode_pagar']): ?>
+                    <form method="post" action="../processamento/paciente.php" class="form-operacao">
+                        <?php operationFields('pagar_consulta'); ?>
+                        <input type="hidden" name="consulta_id" value="<?= (int) $c['id'] ?>">
+                        <label><input type="checkbox" name="confirmacao" value="1" required> Confirmo o pagamento simulado desta consulta.</label>
+                        <button class="botao botao-principal confirmar">Confirmar pagamento simulado</button>
+                    </form>
+                <?php else: emptyState('Esta consulta não permite novo pagamento. Consultas canceladas, vencidas, pagas ou em processamento não podem ser pagas aqui.'); endif; ?>
+            <?php else: emptyState('Selecione uma consulta na área de pagamentos.'); endif; ?>
         </section>
         <aside class="cartao resumo-checkout">
             <h2>Resumo</h2>
@@ -52,7 +51,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                     consulta</span><strong><?= $c ? e(statusLabel($c['status'])) : '—' ?></strong></div>
             <div class="linha-divisoria"></div>
             <div class="total"><span>Total da consulta</span><strong><?= $c ? money($c['valor']) : '—' ?></strong></div>
-            <button class="botao botao-principal confirmar" disabled>Confirmar pagamento</button><a
+            <a
                 href="pagamentosPaciente.php">Voltar para pagamentos</a>
         </aside>
     </div>

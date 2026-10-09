@@ -320,6 +320,40 @@ final class ProfessionalWorkflow
             $total += self::cents((string) query("SELECT COALESCE(SUM(GREATEST(0,p.valor-(SELECT COALESCE(SUM(r.valor),0) FROM reembolsos r WHERE r.pagamento_id=p.id AND r.status IN ('solicitado','processando','concluido')))),0) FROM pagamentos p WHERE p.consulta_id=? AND p.status='aprovado' AND p.moeda='BRL' AND p.pago_em IS NOT NULL", [$id])->fetchColumn());
         return $total;
     }
+    public function patientBilling(int $id): array
+    {
+        $this->role('paciente');
+        $c = $this->ownedConsultation($id);
+        $paid = $this->paidCents($id);
+        $balance = max(0, self::cents($c['valor']) - $paid);
+        $processing = false;
+        foreach ($this->paymentChain($id) as $source)
+            if (query("SELECT id FROM pagamentos WHERE consulta_id=? AND status='processando' LIMIT 1", [$source])->fetch())
+                $processing = true;
+        $eligible = $c['status'] === 'aguardando_pagamento' && $c['inicio_em'] > gmdate('Y-m-d H:i:s');
+        return ['saldo' => self::decimal($balance), 'status' => $c['status'] === 'cancelada' ? 'Cancelado' : ($balance === 0 ? 'Pago' : ($processing ? 'Processando' : 'Pendente')),
+            'pode_pagar' => $eligible && !$processing && ($balance > 0 || self::cents($c['valor']) === 0)];
+    }
+    public function simulatePayment(int $id, array $data): void
+    {
+        $this->role('paciente');
+        if (($data['confirmacao'] ?? '') !== '1')
+            throw new DomainException('Confirme o pagamento simulado.');
+        $initial = $this->ownedConsultation($id);
+        $this->transaction((int) $initial['psicologo_id'], function () use ($id) {
+            query('SELECT id FROM consultas WHERE id=? FOR UPDATE', [$id])->fetch();
+            $c = $this->ownedConsultation($id);
+            $billing = $this->patientBilling($id);
+            if (!$billing['pode_pagar'])
+                throw new DomainException('Esta consulta não permite pagamento: já paga, cancelada, vencida ou em processamento.');
+            // O provedor identifica explicitamente a simulação; não há transação PIX real.
+            query("UPDATE pagamentos SET status='cancelado' WHERE consulta_id=? AND status='pendente'", [$id]);
+            query("INSERT INTO pagamentos(consulta_id,provedor,referencia_externa,metodo,status,valor,pago_em) VALUES (?,'simulacao_academica',?,'pix','aprovado',?,UTC_TIMESTAMP())", [$id, bin2hex(random_bytes(24)), $billing['saldo']]);
+            query("UPDATE consultas SET status='confirmada' WHERE id=?", [$id]);
+            $this->history($c, $c['status'], 'confirmada', 'Pagamento simulado aprovado (projeto acadêmico).');
+            $this->notify($c, 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.');
+        }, (int) $initial['paciente_id']);
+    }
     public function consultationAction(int $id, string $action, array $data = []): int
     {
         $initial = $this->ownedConsultation($id);
@@ -341,6 +375,7 @@ final class ProfessionalWorkflow
                 query("UPDATE consultas SET status='cancelada',cancelada_em=UTC_TIMESTAMP(),motivo_cancelamento=? WHERE id=?", [$reason, $id]);
                 $this->history($c, $old, 'cancelada', $action === 'remarcar' ? 'Remarcação solicitada.' : 'Cancelamento solicitado.');
                 if ($action === 'cancelar') {
+                    query("UPDATE pagamentos SET status='cancelado' WHERE consulta_id=? AND status='pendente'", [$id]);
                     $payments = [];
                     foreach ($this->paymentChain($id) as $source)
                         $payments = array_merge($payments, query("SELECT * FROM pagamentos WHERE consulta_id=? AND status='aprovado' FOR UPDATE", [$source])->fetchAll());
