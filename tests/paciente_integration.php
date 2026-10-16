@@ -66,6 +66,36 @@ try {
     verify(str_contains($html, 'Perfil atualizado com sucesso.') && str_contains($html, 'Paciente &lt;Teste&gt;'), 'Sucesso e escaping do nome');
     verify(accountById($p1)['email'] === $profile['email'] && accountById($p2)['nome'] === $users['p2']['nome'], 'Atualização somente da conta logada');
     verify(query('SELECT data_nascimento FROM pacientes WHERE usuario_id=?', [$p1])->fetchColumn() === '1995-03-12', 'Nascimento persistido');
+    $change = ['acao'=>'alterarSenha','senha_atual'=>$pass,'nova_senha'=>'NovaSenha_56','confirmar_senha'=>'NovaSenha_56'];
+    verify(post($clients['p1'], 'auth', array_replace($change,['csrf'=>'inválido']))['status'] === 403, 'Troca de senha exige CSRF');
+    post($clients['p1'], 'auth', array_replace($change,['senha_atual'=>'senha errada']));
+    verify(!password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Senha atual incorreta não altera senha');
+    post($clients['p1'], 'auth', array_replace($change,['confirmar_senha'=>'outra senha']));
+    verify(!password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Confirmação divergente não altera senha');
+    $hashBeforeSamePassword=accountById($p1)['senha_hash'];
+    post($clients['p1'], 'auth', array_replace($change,['nova_senha'=>$pass,'confirmar_senha'=>$pass]));
+    verify(hash_equals($hashBeforeSamePassword,accountById($p1)['senha_hash']), 'Nova senha igual à atual recusada');
+    verify(post($clients['p1'], 'auth', $change)['status'] === 303 && password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Nova senha salva com hash');
+    verify(str_contains(page($clients['p1'], 'alterarSenha.php'), 'Alterar senha'), 'Sessão permanece autenticada após troca');
+    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>$pass])['status'] === 303, 'Senha antiga recusada no login após troca');
+    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>'NovaSenha_56'])['status'] === 303, 'Nova senha aceita no login');
+    post($clients['p1'], 'auth', array_replace($change,['senha_atual'=>'NovaSenha_56','nova_senha'=>$pass,'confirmar_senha'=>$pass]));
+    verify(password_verify($pass,accountById($p1)['senha_hash']), 'Senha de fixture restaurada');
+
+    $favorite = ['acao'=>'favoritar','psicologo_id'=>$s1];
+    verify(http($clients['p1'],'processamento/paciente.php',$favorite)['status']===403,'Favoritos exigem CSRF');
+    verify(post($clients['p1'],'paciente',$favorite)['status']===303,'Adiciona psicólogo aos favoritos');
+    post($clients['p1'],'paciente',$favorite);
+    verify((int)query('SELECT COUNT(*) FROM favoritos WHERE paciente_id=? AND psicologo_id=?',[$p1,$s1])->fetchColumn()===1,'Favorito duplicado não é criado');
+    post($clients['p1'],'paciente',['acao'=>'favoritar','psicologo_id'=>$p2]);
+    verify((int)query('SELECT COUNT(*) FROM favoritos WHERE paciente_id=? AND psicologo_id=?',[$p1,$p2])->fetchColumn()===0,'Usuário não psicólogo não pode ser favoritado');
+    verify(!str_contains(page($clients['p2'],'meusFavoritos.php'),$users['s1']['nome']),'Favoritos isolados por paciente');
+    $favoriteHtml=page($clients['p1'],'meusFavoritos.php');
+    verify(str_contains($favoriteHtml,'perfilPsicologo.php?psicologo_id='.$s1) && str_contains($favoriteHtml,'agendarConsulta.php?psicologo_id='.$s1),'Favoritos ligam ao perfil e agendamento');
+    verify(str_contains(http($clients['p1'],'view/perfilPsicologo.php?psicologo_id='.$s1)['body'],'Remover dos favoritos'),'Perfil mostra estado favoritado');
+    post($clients['p1'],'auth',['acao'=>'logout']);post($clients['p1'],'auth',['acao'=>'login','email'=>$profile['email'],'senha'=>$pass]);
+    verify(str_contains(page($clients['p1'],'meusFavoritos.php'),$users['s1']['nome']),'Favoritos persistem após novo login');
+    verify(post($clients['p1'],'paciente',['acao'=>'desfavoritar','psicologo_id'=>$s1])['status']===303 && (int)query('SELECT COUNT(*) FROM favoritos WHERE paciente_id=? AND psicologo_id=?',[$p1,$s1])->fetchColumn()===0,'Remove favorito persistido');
     foreach ([['nome' => 'A'], ['email' => 'invalido'], ['email' => $users['p2']['email']], ['telefone' => '--------'], ['data_nascimento' => '2025-02-30'], ['data_nascimento' => '2999-01-01'], ['nome' => ['indevido']]] as $invalid) {
         post($clients['p1'], 'paciente', array_replace($profile, $invalid));
         verify(accountById($p1)['nome'] === $profile['nome'] && accountById($p1)['email'] === $profile['email'], 'Perfil inválido não altera banco: ' . array_key_first($invalid));

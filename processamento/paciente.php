@@ -2,6 +2,26 @@
 require_once __DIR__ . '/../controller/PacienteController.php';
 checkPost();
 $user = requireRole('paciente');
+if (in_array(input('acao'), ['favoritar', 'desfavoritar'], true)) {
+    $action = input('acao');
+    $rawId = input('psicologo_id');
+    $id = filter_var($rawId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    $back = input('origem') === 'perfil' && $id ? 'view/perfilPsicologo.php?psicologo_id=' . $id : 'view/buscarPsicologos.php';
+    try {
+        if ($id === false) throw new DomainException('Psicólogo inválido.');
+        if ($action === 'favoritar') {
+            $professional = query("SELECT p.usuario_id FROM psicologos p JOIN usuarios u ON u.id=p.usuario_id WHERE p.usuario_id=? AND u.papel='psicologo' AND u.status='ativo' AND p.status_verificacao='aprovado'", [$id])->fetch();
+            if (!$professional || (int)$id === (int)$user['id']) throw new DomainException('Este profissional não está disponível para favoritos.');
+            query('INSERT IGNORE INTO favoritos (paciente_id,psicologo_id) VALUES (?,?)', [$user['id'], $id]);
+            flash('Psicólogo adicionado aos favoritos.');
+        } else {
+            query('DELETE FROM favoritos WHERE paciente_id=? AND psicologo_id=?', [$user['id'], $id]);
+            flash('Psicólogo removido dos favoritos.');
+        }
+    } catch (DomainException $error) { flash($error->getMessage()); }
+      catch (Throwable $error) { error_log('Mindly: falha ao atualizar favoritos (' . get_class($error) . ').'); flash('Não foi possível atualizar seus favoritos. Tente novamente.'); }
+    redirect($back);
+}
 if (input('acao') === 'pagar_consulta') {
     try {
         PacienteController::pagamento($user);

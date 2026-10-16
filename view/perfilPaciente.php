@@ -51,7 +51,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                     <h3>Segurança</h3>
                     <p>Atualize sua senha quando necessário.</p>
                     <div class="senha-linha">
-                        <div><strong>Senha</strong><span>Recuperação por e-mail</span></div><a href="redefinirSenha.php"
+                        <div><strong>Senha</strong><span>Altere usando sua senha atual</span></div><a href="alterarSenha.php"
                             class="botao botao-suave">Alterar senha</a>
                     </div>
                 </div>

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../controller/Controlador.php';
 checkPost();
 $action = input('acao');
-$routes = ['cadastro' => 'view/home.php#cadastro', 'login' => 'view/login.php', 'recuperar' => 'view/redefinirSenha.php', 'redefinir' => 'view/redefinirSenha.php'];
+$routes = ['cadastro' => 'view/home.php#cadastro', 'login' => 'view/login.php', 'recuperar' => 'view/redefinirSenha.php', 'redefinir' => 'view/redefinirSenha.php', 'alterarSenha' => 'view/alterarSenha.php'];
 if ($action === 'logout') {
     logout();
     redirect('view/login.php');

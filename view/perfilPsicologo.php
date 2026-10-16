@@ -12,6 +12,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="stylesheet" href="../css/componentes.css">
     <link rel="stylesheet" href="../css/perfilPsicologo.css">
+    <link rel="stylesheet" href="../css/buscarPsicologos.css">
     <title>Mindly | Perfil profissional</title>
 </head>
 
@@ -34,6 +35,9 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                         </div>
                     </div>
                     <div class="tags"><?php professionalTags($p); ?></div>
+                    <?php if ($p && $currentUser['papel'] === 'paciente'): $isFavorite = in_array((int)$p['usuario_id'], $d['favoritos'], true); ?>
+                        <form method="post" action="../processamento/paciente.php" class="perfil-favorito"><?= csrfField() ?><input type="hidden" name="acao" value="<?= $isFavorite ? 'desfavoritar' : 'favoritar' ?>"><input type="hidden" name="psicologo_id" value="<?= (int)$p['usuario_id'] ?>"><input type="hidden" name="origem" value="perfil"><button class="botao botao-suave" type="submit"><?= icon('heart') ?> <?= $isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos' ?></button></form>
+                    <?php endif; ?>
                 <?php else:
                 emptyState('Selecione um profissional na busca para visualizar seu perfil.'); ?><a
                         href="buscarPsicologos.php" class="botao botao-principal">Buscar psicólogos</a><?php endif; ?>

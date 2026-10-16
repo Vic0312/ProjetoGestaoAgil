@@ -38,8 +38,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
     <div class="grade-profissionais">
         <?php foreach ($d['profissionais'] as $p): ?>
             <article class="cartao profissional">
-                <div class="topo-prof"><?php avatar($p, 'avatar-foto grande'); ?><button class="favorito" disabled
-                        title="Favoritos ainda não disponíveis"><?= icon('heart') ?></button></div>
+                <div class="topo-prof"><?php avatar($p, 'avatar-foto grande'); ?><form method="post" action="../processamento/paciente.php" class="favorito-form"><?= csrfField() ?><input type="hidden" name="acao" value="<?= in_array((int)$p['usuario_id'], $d['favoritos'], true) ? 'desfavoritar' : 'favoritar' ?>"><input type="hidden" name="psicologo_id" value="<?= (int)$p['usuario_id'] ?>"><button class="favorito <?= in_array((int)$p['usuario_id'], $d['favoritos'], true) ? 'ativo' : '' ?>" aria-label="<?= in_array((int)$p['usuario_id'], $d['favoritos'], true) ? 'Remover dos favoritos' : 'Adicionar aos favoritos' ?>" title="<?= in_array((int)$p['usuario_id'], $d['favoritos'], true) ? 'Remover dos favoritos' : 'Adicionar aos favoritos' ?>"><?= icon('heart') ?></button></form></div>
                 <h2><?= e($p['nome_profissional']) ?></h2>
                 <p class="crp">CRP <?= e($p['crp']) ?></p>
                 <div class="avaliacao"><?= icon('star') ?><strong><?= rating($p) ?></strong><span>·

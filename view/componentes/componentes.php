@@ -47,10 +47,12 @@ function navItems($perfil)
         return [
             ['dashboardPaciente.php', 'home', 'Início', 'inicio'],
             ['buscarPsicologos.php', 'search', 'Psicólogos', 'psicologos'],
+            ['meusFavoritos.php', 'heart', 'Meus favoritos', 'favoritos'],
             ['minhasConsultas.php', 'calendar', 'Consultas', 'consultas'],
             ['prontuarioPaciente.php', 'file', 'Meu histórico', 'historico'],
             ['pagamentosPaciente.php', 'wallet', 'Pagamentos', 'pagamentos'],
             ['perfilPaciente.php', 'user', 'Meu perfil', 'perfil'],
+            ['alterarSenha.php', 'lock', 'Segurança', 'seguranca'],
         ];
     if ($perfil === 'psicologo')
         return [
@@ -60,6 +62,7 @@ function navItems($perfil)
             ['pacientesPsicologo.php', 'users', 'Pacientes', 'pacientes'],
             ['prontuarioPsicologo.php', 'file', 'Prontuários', 'prontuarios'],
             ['perfilProfissional.php', 'user', 'Meu perfil', 'perfil'],
+            ['alterarSenha.php', 'lock', 'Segurança', 'seguranca'],
             ['financeiroPsicologo.php', 'wallet', 'Financeiro', 'financeiro'],
             ['notificacoesPsicologo.php', 'bell', 'Notificações', 'notificacoes'],
         ];

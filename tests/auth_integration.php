@@ -41,7 +41,7 @@ try {
     check(str_contains($r['headers'],'no-store'),'área restrita sem cache');
     foreach($pages as $page) {
         $source=file_get_contents(__DIR__.'/../view/'.$page);
-        $own=str_contains($source,"requireRole('paciente')");
+        $own=$page==='alterarSenha.php' || $page==='meusFavoritos.php' || str_contains($source,"requireRole('paciente')");
         check(request($p,'view/'.$page)['status']===($own?200:403),'permissão paciente: '.$page);
     }
     check(location(submit($anonymous,'cadastro',$registration),'view/home.php'),'e-mail duplicado recusado');
@@ -59,7 +59,7 @@ try {
     query("UPDATE psicologos SET status_verificacao='aprovado',verificado_em=UTC_TIMESTAMP() WHERE usuario_id=?",[$sid]);
     check(location(submit($s,'login',['email'=>$psychEmail,'senha'=>$pass,'papel'=>'admin']),'view/dashboardPsicologo.php'),'login usa papel do banco');
     foreach($pages as $page) {
-        $own=$page!=='perfilPsicologo.php' && str_contains(file_get_contents(__DIR__.'/../view/'.$page),"requireRole('psicologo')");
+        $own=$page==='alterarSenha.php' || ($page!=='perfilPsicologo.php' && str_contains(file_get_contents(__DIR__.'/../view/'.$page),"requireRole('psicologo')"));
         check(request($s,'view/'.$page)['status']===($own?200:403),'permissão psicólogo: '.$page);
     }
     query("UPDATE psicologos SET status_verificacao='rejeitado' WHERE usuario_id=?",[$sid]);
@@ -97,7 +97,7 @@ try {
     $a=client();check(location(submit($a,'login',['email'=>$emails[3],'senha'=>$pass]),'view/dashboardAdmin.php'),'login admin');
     foreach($pages as $page) {
         $own=str_contains(file_get_contents(__DIR__.'/../view/'.$page),"requireRole('admin')");
-        check(request($a,'view/'.$page)['status']===($own?200:403),'permissão admin: '.$page);
+        check(request($a,'view/'.$page)['status']===($page==='alterarSenha.php'?303:($own?200:403)),'permissão admin: '.$page);
     }
     echo "Todos os testes passaram.\n";
 } finally {

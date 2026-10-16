@@ -62,9 +62,15 @@ function pageData(string $page, array $user): array
                 $professional['proximo_horario'] = $model->slots((int) $professional['usuario_id'], 1)[0]['inicio_em'] ?? null;
             }
             unset($professional);
+            $d['favoritos'] = $model->favoriteIds();
+            break;
+        case 'meusFavoritos.php':
+            $d['profissionais'] = $model->favorites();
             break;
         case 'perfilPsicologo.php':
         case 'agendarConsulta.php':
+            if ($page === 'perfilPsicologo.php' && $user['papel'] === 'paciente')
+                $d['favoritos'] = $model->favoriteIds();
             $id = $page === 'perfilPsicologo.php' && $user['papel'] === 'psicologo' ? (int) $user['id'] : requestId('psicologo_id');
             if ($id !== null) {
                 $d['profissional'] = $model->professional($id, $user['papel'] === 'psicologo');

@@ -78,6 +78,16 @@ final class MindlyData
         }
         return query($this->professionalSelect() . $where . ' ORDER BY nome_profissional,p.usuario_id', $params)->fetchAll();
     }
+    public function favorites(): array
+    {
+        $this->only('paciente');
+        return query($this->professionalSelect() . " JOIN favoritos f ON f.psicologo_id=p.usuario_id WHERE f.paciente_id=? AND p.status_verificacao='aprovado' AND u.status='ativo' ORDER BY f.criado_em DESC,p.usuario_id", [$this->id])->fetchAll();
+    }
+    public function favoriteIds(): array
+    {
+        $this->only('paciente');
+        return array_map('intval', query('SELECT psicologo_id FROM favoritos WHERE paciente_id=?', [$this->id])->fetchAll(PDO::FETCH_COLUMN));
+    }
     public function specialties(): array
     {
         return query('SELECT nome FROM especialidades ORDER BY nome')->fetchAll(PDO::FETCH_COLUMN);

@@ -2,6 +2,33 @@
 require_once __DIR__ . '/Auth.php';
 class Controlador
 {
+    public static function alterarSenha(): void
+    {
+        $id = $_SESSION['user_id'] ?? null;
+        if (!$id)
+            throw new DomainException('Sessão expirada. Entre novamente.');
+        validatePassword(input('nova_senha'), input('confirmar_senha'));
+        if (!password_verify(input('senha_atual'), (string) (accountById($id)['senha_hash'] ?? '')))
+            throw new DomainException('A senha atual está incorreta.');
+        if (hash_equals(input('senha_atual'), input('nova_senha')))
+            throw new DomainException('A nova senha deve ser diferente da senha atual.');
+        $hash = password_hash(input('nova_senha'), PASSWORD_DEFAULT);
+        db()->beginTransaction();
+        try {
+            $account = query('SELECT senha_hash FROM usuarios WHERE id=? FOR UPDATE', [$id])->fetch();
+            if (!$account || !password_verify(input('senha_atual'), $account['senha_hash']))
+                throw new DomainException('A senha atual está incorreta.');
+            query('UPDATE usuarios SET senha_hash=? WHERE id=?', [$hash, $id]);
+            query('UPDATE tokens_login_persistente SET revogado_em=UTC_TIMESTAMP() WHERE usuario_id=? AND revogado_em IS NULL', [$id]);
+            db()->commit();
+        } catch (Throwable $error) {
+            if (db()->inTransaction()) db()->rollBack();
+            throw $error;
+        }
+        $_SESSION['password_stamp'] = hash('sha256', $hash);
+        flash('Senha alterada com sucesso.');
+        redirect('view/alterarSenha.php');
+    }
     public static function cadastro(): void
     {
         $name = trim(input('nome'));
