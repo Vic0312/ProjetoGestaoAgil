@@ -8,19 +8,27 @@ final class ProfissionalController
         $file = $_FILES['foto'] ?? null;
         if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE)
             return null;
-        if (!is_int($file['error']) || $file['error'] !== UPLOAD_ERR_OK || !is_string($file['tmp_name']) || !is_uploaded_file($file['tmp_name']) || $file['size'] > 2 * 1024 * 1024)
-            throw new DomainException('Envie uma foto JPG ou PNG de até 2 MB.');
+        if (!is_int($file['error']) || $file['error'] !== UPLOAD_ERR_OK || !is_string($file['tmp_name']) || !is_uploaded_file($file['tmp_name']) || !is_int($file['size']) || $file['size'] > 2 * 1024 * 1024)
+            throw new DomainException("Envie uma foto JPG, PNG ou WEBP de at\u{00E9} 2 MB.");
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
         $size = @getimagesize($file['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true) || !$size || $size[0] > 4096 || $size[1] > 4096 || $size[0] < 1 || $size[1] < 1)
-            throw new DomainException('Foto inválida. Use JPG ou PNG com até 4096 × 4096 pixels.');
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true) || !$size || $size[0] > 4096 || $size[1] > 4096 || $size[0] < 1 || $size[1] < 1)
+            throw new DomainException("Foto inv\u{00E1}lida. Use JPG, PNG ou WEBP com at\u{00E9} 4096 x 4096 pixels.");
         $directory = __DIR__ . '/../storage/avatars';
         if (!is_dir($directory) && !mkdir($directory, 0700, true))
             throw new RuntimeException('Storage unavailable');
-        $name = bin2hex(random_bytes(24)) . ($mime === 'image/png' ? '.png' : '.jpg');
+        $extension = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'][$mime];
+        $name = bin2hex(random_bytes(24)) . '.' . $extension;
         if (!move_uploaded_file($file['tmp_name'], $directory . '/' . $name))
             throw new RuntimeException('Upload failed');
         return $name;
+    }
+    public static function removeOwnedAvatar(?string $name): void
+    {
+        if ($name !== null && preg_match('/^[a-f0-9]{48}\.(jpg|png|webp)$/D', $name)) {
+            $path = __DIR__ . '/../storage/avatars/' . $name;
+            if (is_file($path)) @unlink($path);
+        }
     }
     public static function run(array $user, string $action): string
     {

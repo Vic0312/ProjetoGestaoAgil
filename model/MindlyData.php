@@ -28,16 +28,18 @@ final class MindlyData
     public function consultations(?int $id = null): array
     {
         [$where, $params] = $this->scope();
+        $reviewFields = $this->role === 'paciente' ? 'a.id avaliacao_id,a.nota avaliacao_nota,a.comentario avaliacao_comentario' : 'NULL avaliacao_id,NULL avaliacao_nota,NULL avaliacao_comentario';
+        $reviewJoin = $this->role === 'paciente' ? ' LEFT JOIN avaliacoes a ON a.consulta_id=c.id AND a.paciente_id=c.paciente_id AND a.psicologo_id=c.psicologo_id' : '';
         if ($id !== null) {
             $where .= ' AND c.id=?';
             $params[] = $id;
         }
         return query("SELECT c.id,c.consulta_origem_id,c.paciente_id,c.psicologo_id,c.valor,c.modalidade,c.status,c.criado_em,c.iniciada_em,c.encerrada_em,
             h.inicio_em,h.fim_em,TIMESTAMPDIFF(MINUTE,h.inicio_em,h.fim_em) duracao,
-            pa.nome paciente_nome,COALESCE(NULLIF(p.nome_profissional,''),pu.nome) psicologo_nome,p.area_atuacao,p.crp
+            pa.nome paciente_nome,COALESCE(NULLIF(p.nome_profissional,''),pu.nome) psicologo_nome,p.area_atuacao,p.crp,$reviewFields
             FROM consultas c JOIN horarios_agenda h ON h.id=c.horario_id AND h.psicologo_id=c.psicologo_id
             JOIN usuarios pa ON pa.id=c.paciente_id JOIN usuarios pu ON pu.id=c.psicologo_id
-            JOIN psicologos p ON p.usuario_id=c.psicologo_id WHERE $where ORDER BY h.inicio_em,c.id", $params)->fetchAll();
+            JOIN psicologos p ON p.usuario_id=c.psicologo_id$reviewJoin WHERE $where ORDER BY h.inicio_em,c.id", $params)->fetchAll();
     }
     public function profile(): array
     {

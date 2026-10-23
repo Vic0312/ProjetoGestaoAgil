@@ -9,8 +9,13 @@ if (!$account) {
 }
 requireRole($account['papel']);
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-$photo = $id ? query("SELECT u.avatar_url FROM usuarios u JOIN psicologos p ON p.usuario_id=u.id WHERE u.id=? AND u.status='ativo' AND p.status_verificacao='aprovado'", [$id])->fetchColumn() : false;
-if (!$photo || !preg_match('/^[a-f0-9]{48}\.(jpg|png)$/D', $photo, $m)) {
+$photo = false;
+if ($id && $account['papel'] === 'paciente' && (int) $id === (int) $account['id']) {
+    $photo = $account['avatar_url'];
+} elseif ($id && $account['papel'] === 'psicologo') {
+    $photo = query("SELECT u.avatar_url FROM usuarios u JOIN psicologos p ON p.usuario_id=u.id WHERE u.id=? AND u.status='ativo' AND p.status_verificacao='aprovado'", [$id])->fetchColumn();
+}
+if (!$photo || !preg_match('/^[a-f0-9]{48}\.(jpg|png|webp)$/D', $photo, $m)) {
     http_response_code(404);
     exit;
 }
@@ -19,7 +24,7 @@ if (!is_file($file)) {
     http_response_code(404);
     exit;
 }
-header('Content-Type: ' . ($m[1] === 'png' ? 'image/png' : 'image/jpeg'));
+header('Content-Type: ' . ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'][$m[1]]);
 header('X-Content-Type-Options: nosniff');
 header('Content-Length: ' . filesize($file));
 readfile($file);

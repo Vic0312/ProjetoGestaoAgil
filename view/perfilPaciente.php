@@ -19,9 +19,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
     <?php abrirLayout('paciente', 'perfil', 'Meu perfil', 'Mantenha suas informações de acesso e contato atualizadas.', $currentUser['nome']); ?>
     <div class="perfil-layout">
         <aside class="cartao resumo-perfil">
-            <div class="foto-perfil"><span
-                    class="avatar-foto foto"><?= e(initials($currentUser['nome'])) ?></span><button disabled
-                    title="Alteração de foto ainda não disponível"><?= icon('camera') ?></button></div>
+            <div class="foto-perfil"><?php avatar($currentUser, 'avatar-foto foto'); ?></div>
             <h2><?= e($currentUser['nome']) ?></h2>
             <p><?= e($currentUser['email']) ?></p><span class="tag">Paciente</span>
             <div class="linha-divisoria"></div>
@@ -35,8 +33,9 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                     <p>Dados utilizados no seu perfil Mindly.</p>
                 </div><button form="perfil-paciente" class="botao botao-principal"><?= icon('edit') ?> Salvar alterações</button>
             </div>
-            <form id="perfil-paciente" method="post" action="../processamento/paciente.php">
+            <form id="perfil-paciente" method="post" action="../processamento/paciente.php" enctype="multipart/form-data">
                 <?php operationFields('perfil_paciente'); ?>
+                <div class="campo campo-largo"><label for="foto">Foto de perfil</label><input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG ou WEBP · até 2 MB. Selecione uma imagem para atualizar a foto.</small></div>
                 <div class="grade-campos">
                     <div class="campo"><label for="nome">Nome completo</label><input id="nome" name="nome" autocomplete="name" required minlength="2" maxlength="150"
                             value="<?= e(oldOperation('perfil_paciente', 'nome', $currentUser['nome'])) ?>"></div>

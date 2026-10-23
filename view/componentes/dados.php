@@ -56,7 +56,7 @@ function oldOperation(string $action, string $key, $default = '')
 function avatar(array $user, string $class = 'avatar-foto'): void
 {
     $name = $user['nome_profissional'] ?? $user['nome'] ?? '';
-    if (!empty($user['avatar_url']) && preg_match('/^[a-f0-9]{48}\.(jpg|png)$/D', $user['avatar_url'])) {
+    if (!empty($user['avatar_url']) && preg_match('/^[a-f0-9]{48}\.(jpg|png|webp)$/D', $user['avatar_url'])) {
         echo '<img class="' . e($class) . ' foto-real" src="../processamento/avatar.php?id=' . (int) ($user['usuario_id'] ?? $user['id']) . '" alt="Foto de ' . e($name) . '">';
     } else
         echo '<span class="' . e($class) . '">' . e(initials($name)) . '</span>';

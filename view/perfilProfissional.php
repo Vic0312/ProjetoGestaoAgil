@@ -64,8 +64,8 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                                     type="checkbox" name="especialidades[]" value="<?= (int) $option['id'] ?>"
                                     <?= in_array((string) $option['id'], $selected, true) ? 'checked' : '' ?>>
                                 <?= e($option['nome']) ?></label><?php endforeach; ?></div>
-                </fieldset><label class="campo">Foto (JPG/PNG até 2 MB)<input type="file" name="foto"
-                        accept="image/jpeg,image/png"></label><label><input type="checkbox" name="remover_foto"
+                </fieldset><label class="campo">Foto (JPG/PNG/WEBP até 2 MB)<input type="file" name="foto"
+                        accept="image/jpeg,image/png,image/webp"></label><label><input type="checkbox" name="remover_foto"
                         value="1"> Remover foto atual</label>
                 <div class="campo"><label>E-mail da conta</label><input readonly
                         value="<?= e($currentUser['email']) ?>"><small>O e-mail de acesso e o CRP não são alterados por

@@ -25,9 +25,11 @@ class Controlador
             if (db()->inTransaction()) db()->rollBack();
             throw $error;
         }
-        $_SESSION['password_stamp'] = hash('sha256', $hash);
-        flash('Senha alterada com sucesso.');
-        redirect('view/alterarSenha.php');
+        logout();
+        session_id('');
+        session_start();
+        flash('Senha alterada com sucesso. Entre novamente com sua nova senha.');
+        redirect('view/login.php');
     }
     public static function cadastro(): void
     {

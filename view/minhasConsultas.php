@@ -49,6 +49,22 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
                         <a class="botao botao-suave" href="?consulta_id=<?= (int) $c['id'] ?>&amp;acao=remarcar#remarcar-consulta">Remarcar</a>
                         <a class="botao botao-suave" href="?consulta_id=<?= (int) $c['id'] ?>&amp;acao=cancelar#cancelar-consulta">Cancelar</a>
                     <?php endif; ?></div>
+                <?php if ($c['status'] === 'concluida'): ?>
+                    <div class="avaliacao-consulta">
+                        <?php if (!empty($c['avaliacao_id'])): ?>
+                            <strong>Você avaliou esta consulta com <?= (int) $c['avaliacao_nota'] ?> de 5 estrelas.</strong>
+                            <?php if (!empty($c['avaliacao_comentario'])): ?><p><?= e($c['avaliacao_comentario']) ?></p><?php endif; ?>
+                        <?php else: ?>
+                            <form method="post" action="../processamento/paciente.php">
+                                <?= csrfField() ?><input type="hidden" name="acao" value="avaliar_consulta"><input type="hidden" name="consulta_id" value="<?= (int) $c['id'] ?>">
+                                <label for="nota-<?= (int) $c['id'] ?>">Avalie esta consulta</label>
+                                <fieldset class="nota-estrelas"><legend>Nota</legend><?php for ($star = 1; $star <= 5; $star++): ?><input id="nota-<?= (int) $c['id'] ?>-<?= $star ?>" name="nota" type="radio" value="<?= $star ?>" required><label for="nota-<?= (int) $c['id'] ?>-<?= $star ?>" aria-label="<?= $star ?> de 5 estrelas" title="<?= $star ?> de 5 estrelas">&#9733;</label><?php endfor; ?></fieldset>
+                                <label for="comentario-<?= (int) $c['id'] ?>">Comentário (opcional)</label><textarea id="comentario-<?= (int) $c['id'] ?>" name="comentario" maxlength="2000" rows="2" placeholder="Compartilhe como foi sua experiência"></textarea>
+                                <button class="botao botao-principal" type="submit">Enviar avaliação</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </article><?php endforeach;
     if (!$d['listaConsultas']): ?>
             <article class="cartao consulta">

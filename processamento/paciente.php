@@ -33,6 +33,17 @@ if (input('acao') === 'pagar_consulta') {
     }
     redirect('view/pagamentosPaciente.php');
 }
+if (input('acao') === 'avaliar_consulta') {
+    try {
+        PacienteController::avaliar($user);
+    } catch (DomainException $error) {
+        flash($error->getMessage());
+    } catch (Throwable $error) {
+        error_log('Mindly: falha ao registrar avaliacao (' . get_class($error) . ').');
+        flash("N\u{00E3}o foi poss\u{00ED}vel registrar sua avalia\u{00E7}\u{00E3}o. Tente novamente.");
+    }
+    redirect('view/minhasConsultas.php?aba=realizadas');
+}
 if (input('acao') !== 'perfil_paciente') {
     http_response_code(400);
     exit('Operação inválida.');

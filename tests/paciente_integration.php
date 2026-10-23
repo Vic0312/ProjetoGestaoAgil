@@ -40,6 +40,17 @@ function post(CurlHandle $c, string $endpoint, array $data): array
     if (!preg_match('/name="csrf" value="([a-f0-9]+)"/', $r['body'], $m)) throw new RuntimeException('CSRF ausente');
     return http($c, 'processamento/' . $endpoint . '.php', $data + ['csrf' => $m[1]]);
 }
+function postFiles(CurlHandle $c, string $endpoint, array $data, array $files): array
+{
+    global $base;
+    $login = http($c, 'view/login.php');
+    if (!preg_match('/name="csrf" value="([a-f0-9]+)"/', $login['body'], $token)) throw new RuntimeException('CSRF ausente');
+    curl_setopt_array($c, [CURLOPT_URL => $base . '/processamento/' . $endpoint . '.php', CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $data + ['csrf' => $token[1]] + $files]);
+    $raw = curl_exec($c); if ($raw === false) throw new RuntimeException(curl_error($c));
+    $size = curl_getinfo($c, CURLINFO_HEADER_SIZE);
+    return ['status' => curl_getinfo($c, CURLINFO_HTTP_CODE), 'headers' => substr($raw, 0, $size), 'body' => substr($raw, $size)];
+}
 function operation(CurlHandle $c, string $action, array $data): void
 {
     verify(post($c, 'profissional', ['acao' => $action] + $data)['status'] === 303, 'POST ' . $action);
@@ -48,7 +59,7 @@ function consultation(int $id): array
 {
     return query('SELECT * FROM consultas WHERE id=?', [$id])->fetch();
 }
-$ids = []; $users = []; $clients = []; $tag = bin2hex(random_bytes(8)); $pass = bin2hex(random_bytes(16));
+$ids = []; $users = []; $clients = []; $temporaryFiles = []; $avatarNames = []; $tag = bin2hex(random_bytes(8)); $pass = bin2hex(random_bytes(16));
 try {
     foreach (['p1' => 'paciente', 'p2' => 'paciente', 's1' => 'psicologo', 's2' => 'psicologo'] as $key => $role) {
         query("INSERT INTO usuarios(nome,email,senha_hash,papel,status) VALUES (?,?,?,?,'ativo')", [$key . ' ' . $tag, "$key-$tag@example.invalid", password_hash($pass, PASSWORD_DEFAULT), $role]);
@@ -66,22 +77,40 @@ try {
     verify(str_contains($html, 'Perfil atualizado com sucesso.') && str_contains($html, 'Paciente &lt;Teste&gt;'), 'Sucesso e escaping do nome');
     verify(accountById($p1)['email'] === $profile['email'] && accountById($p2)['nome'] === $users['p2']['nome'], 'Atualização somente da conta logada');
     verify(query('SELECT data_nascimento FROM pacientes WHERE usuario_id=?', [$p1])->fetchColumn() === '1995-03-12', 'Nascimento persistido');
+    $png = tempnam(sys_get_temp_dir(), 'mindly-avatar-'); $temporaryFiles[] = $png;
+    file_put_contents($png, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pWQAAAAASUVORK5CYII='));
+    $photoUpload = postFiles($clients['p1'], 'paciente', $profile, ['foto' => new CURLFile($png, 'image/png', 'avatar.png')]);
+    verify($photoUpload['status'] === 303, 'Upload de foto PNG aceito');
+    $avatarNames[] = accountById($p1)['avatar_url'];
+    verify((bool) preg_match('/^[a-f0-9]{48}\.png$/D', accountById($p1)['avatar_url']), 'Nome de avatar aleatÃ³rio salvo no usuÃ¡rio');
+    verify(http($clients['p1'], 'processamento/avatar.php?id=' . $p1)['status'] === 200, 'Avatar enviado pode ser lido pela prÃ³pria conta');
+    verify(http($clients['p2'], 'processamento/avatar.php?id=' . $p1)['status'] === 404, 'Outra conta nÃ£o acessa avatar privado de paciente');
+    $invalidFile = tempnam(sys_get_temp_dir(), 'mindly-invalid-'); $temporaryFiles[] = $invalidFile; file_put_contents($invalidFile, 'not an image');
+    postFiles($clients['p1'], 'paciente', $profile, ['foto' => new CURLFile($invalidFile, 'text/plain', 'avatar.txt')]);
+    verify(str_contains(page($clients['p1'], 'perfilPaciente.php'), 'Foto inv'), 'Formato invalido informa erro ao paciente');
+    verify(accountById($p1)['avatar_url'] === $avatarNames[0], 'Upload invÃ¡lido preserva a foto anterior');
+    $largeFile = tempnam(sys_get_temp_dir(), 'mindly-large-'); $temporaryFiles[] = $largeFile; $large = fopen($largeFile, 'wb'); ftruncate($large, 2 * 1024 * 1024 + 1); fclose($large);
+    postFiles($clients['p1'], 'paciente', $profile, ['foto' => new CURLFile($largeFile, 'image/png', 'large.png')]);
+    verify(accountById($p1)['avatar_url'] === $avatarNames[0], 'Upload acima de 2 MB preserva a foto anterior');
     $change = ['acao'=>'alterarSenha','senha_atual'=>$pass,'nova_senha'=>'NovaSenha_56','confirmar_senha'=>'NovaSenha_56'];
     verify(post($clients['p1'], 'auth', array_replace($change,['csrf'=>'inválido']))['status'] === 403, 'Troca de senha exige CSRF');
     post($clients['p1'], 'auth', array_replace($change,['senha_atual'=>'senha errada']));
     verify(!password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Senha atual incorreta não altera senha');
     post($clients['p1'], 'auth', array_replace($change,['confirmar_senha'=>'outra senha']));
     verify(!password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Confirmação divergente não altera senha');
+    verify(page($clients['p1'], 'alterarSenha.php') !== '', 'Falha ao alterar senha mantem sessao autenticada');
     $hashBeforeSamePassword=accountById($p1)['senha_hash'];
     post($clients['p1'], 'auth', array_replace($change,['nova_senha'=>$pass,'confirmar_senha'=>$pass]));
     verify(hash_equals($hashBeforeSamePassword,accountById($p1)['senha_hash']), 'Nova senha igual à atual recusada');
-    verify(post($clients['p1'], 'auth', $change)['status'] === 303 && password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Nova senha salva com hash');
-    verify(str_contains(page($clients['p1'], 'alterarSenha.php'), 'Alterar senha'), 'Sessão permanece autenticada após troca');
-    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>$pass])['status'] === 303, 'Senha antiga recusada no login após troca');
-    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>'NovaSenha_56'])['status'] === 303, 'Nova senha aceita no login');
+    $changed = post($clients['p1'], 'auth', $change);
+    verify($changed['status'] === 303 && str_contains($changed['headers'], '/view/login.php') && password_verify('NovaSenha_56',accountById($p1)['senha_hash']), 'Senha alterada e redirecionada para login');
+    verify(location(http($clients['p1'], 'view/dashboardPaciente.php'), 'view/login.php'), 'Sessao anterior invalidada');
+    verify(str_contains(page($clients['p1'], 'login.php'), 'Entre novamente'), 'Mensagem de nova autenticacao exibida');
+    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>$pass])['status'] === 303, 'Senha antiga nao aceita');
+    verify(post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>'NovaSenha_56'])['status'] === 303, 'Nova senha aceita');
     post($clients['p1'], 'auth', array_replace($change,['senha_atual'=>'NovaSenha_56','nova_senha'=>$pass,'confirmar_senha'=>$pass]));
-    verify(password_verify($pass,accountById($p1)['senha_hash']), 'Senha de fixture restaurada');
-
+    verify(location(http($clients['p1'], 'view/dashboardPaciente.php'), 'view/login.php'), 'Troca de senha restaura e encerra sessao');
+    post($clients['p1'], 'auth', ['acao'=>'login','email'=>$profile['email'],'senha'=>$pass]);
     $favorite = ['acao'=>'favoritar','psicologo_id'=>$s1];
     verify(http($clients['p1'],'processamento/paciente.php',$favorite)['status']===403,'Favoritos exigem CSRF');
     verify(post($clients['p1'],'paciente',$favorite)['status']===303,'Adiciona psicólogo aos favoritos');
@@ -107,6 +136,7 @@ try {
     post($clients['p1'], 'auth', ['acao' => 'logout']);
     post($clients['p1'], 'auth', ['acao' => 'login', 'email' => $profile['email'], 'senha' => $pass]);
     verify(str_contains(page($clients['p1'], 'perfilPaciente.php'), '1995-03-12'), 'Perfil persiste após novo login');
+    verify(accountById($p1)['avatar_url'] === $avatarNames[0] && http($clients['p1'], 'processamento/avatar.php?id=' . $p1)['status'] === 200, 'Foto continua disponivel apos novo login');
 
     $day = new DateTimeImmutable('+2 days', new DateTimeZone('America/Sao_Paulo'));
     foreach (['s1', 's2'] as $key) {
@@ -219,9 +249,27 @@ try {
     verify(str_contains(page($clients['s1'], 'agendaPsicologo.php'), 'Cancelada'), 'Cancelamento refletido na agenda profissional');
     // Um estado final registrado no banco deve aparecer na aba realizadas, sem inferir conclusão pelo relógio.
     $done = query('SELECT id FROM consultas WHERE paciente_id=?', [$p2])->fetchColumn();
+    $doneSlot = query('SELECT horario_id FROM consultas WHERE id=?', [$done])->fetchColumn();
+    query('UPDATE horarios_agenda SET inicio_em=?,fim_em=? WHERE id=?', [gmdate('Y-m-d H:i:s', time()-7200), gmdate('Y-m-d H:i:s', time()-3600), $doneSlot]);
     query("UPDATE consultas SET status='concluida' WHERE id=?", [$done]);
     verify(str_contains(page($clients['p2'], 'minhasConsultas.php?aba=realizadas'), 'Concluída'), 'Aba realizadas usa status persistido');
     // Duas sessões diferentes enviam a mesma reserva simultaneamente ao Apache.
+    $review = ['acao' => 'avaliar_consulta', 'consulta_id' => $done, 'nota' => '5', 'comentario' => 'Atendimento acolhedor.'];
+    post($clients['p1'], 'paciente', $review);
+    verify(!query('SELECT id FROM avaliacoes WHERE consulta_id=?', [$done])->fetchColumn(), 'Outro paciente nao consegue avaliar a consulta');
+    post($clients['p2'], 'paciente', array_replace($review, ['nota' => '6']));
+    verify(!query('SELECT id FROM avaliacoes WHERE consulta_id=?', [$done])->fetchColumn(), 'Nota fora do intervalo recusada');
+    post($clients['p1'], 'paciente', ['acao' => 'avaliar_consulta', 'consulta_id' => $id, 'nota' => '5']);
+    verify(!query('SELECT id FROM avaliacoes WHERE consulta_id=?', [$id])->fetchColumn(), 'Consulta cancelada nao pode ser avaliada');
+    $statusBeforeReview = consultation((int) $done)['status'];
+    post($clients['p2'], 'paciente', $review);
+    $savedReview = query('SELECT * FROM avaliacoes WHERE consulta_id=?', [$done])->fetch();
+    verify($savedReview && (int) $savedReview['paciente_id'] === $p2 && (int) $savedReview['psicologo_id'] === $s1 && (int) $savedReview['nota'] === 5 && $savedReview['comentario'] === $review['comentario'], 'Avaliacao valida persiste os vinculos e o comentario');
+    verify(consultation((int) $done)['status'] === $statusBeforeReview, 'Avaliacao nao altera status da consulta');
+    post($clients['p2'], 'paciente', $review);
+    verify((int) query('SELECT COUNT(*) FROM avaliacoes WHERE consulta_id=?', [$done])->fetchColumn() === 1, 'Avaliacao duplicada impedida');
+    verify(str_contains(page($clients['p2'], 'minhasConsultas.php?aba=realizadas'), "Voc\u{00EA} avaliou esta consulta com 5 de 5 estrelas"), 'Paciente ve a avaliacao enviada');
+    verify((new MindlyData(accountById($p1)))->professional($s1)['avaliacoes'] > 0, 'Avaliacao publicada integra a classificacao publica do profissional');
     $multi = curl_multi_init();
     try {
         foreach (['p1', 'p2'] as $key) {
@@ -258,11 +306,14 @@ try {
     }
     echo "Todos os testes de perfil, agendamento, remarcação, cancelamento e links passaram.\n";
 } finally {
+    foreach ($temporaryFiles as $file) if (is_file($file)) unlink($file);
+    foreach (array_unique(array_filter($avatarNames)) as $name) if (preg_match('/^[a-f0-9]{48}\.(jpg|png|webp)$/D', $name)) @unlink(__DIR__ . '/../storage/avatars/' . $name);
     if ($ids) {
         $marks = implode(',', array_fill(0, count($ids), '?')); $values = array_values($ids);
         $consultations = query("SELECT id FROM consultas WHERE paciente_id IN ($marks)", $values)->fetchAll(PDO::FETCH_COLUMN);
         if ($consultations) {
             $cm = implode(',', array_fill(0, count($consultations), '?'));
+            query("DELETE FROM avaliacoes WHERE consulta_id IN ($cm)", $consultations);
             query("DELETE r FROM reembolsos r JOIN pagamentos p ON p.id=r.pagamento_id WHERE p.consulta_id IN ($cm)", $consultations);
             query("DELETE FROM pagamentos WHERE consulta_id IN ($cm)", $consultations);
             foreach (['notificacoes', 'historico_status_consultas'] as $table) query("DELETE FROM $table WHERE consulta_id IN ($cm)", $consultations);
