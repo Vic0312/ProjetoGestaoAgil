@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 09/10/2026 às 19:09
+-- Tempo de geração: 23/10/2026 às 18:30
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -142,13 +142,14 @@ INSERT INTO `consultas` (`id`, `horario_id`, `psicologo_id`, `paciente_id`, `con
 (60, 685, 87, 27, NULL, 120.00, 'online', 'concluida', NULL, NULL, '2026-09-18 14:00:00', '2026-09-18 14:50:00', '2026-09-15 13:00:00', '2026-10-09 16:57:10'),
 (61, 686, 87, 27, NULL, 120.00, 'online', 'concluida', NULL, NULL, '2026-10-02 15:00:00', '2026-10-02 15:50:00', '2026-09-28 14:30:00', '2026-10-09 16:57:10'),
 (62, 687, 88, 27, NULL, 135.00, 'online', 'confirmada', NULL, NULL, NULL, NULL, '2026-10-06 12:00:00', '2026-10-09 16:57:10'),
-(63, 688, 89, 27, NULL, 110.00, 'online', 'aguardando_pagamento', NULL, NULL, NULL, NULL, '2026-10-09 13:00:00', '2026-10-09 16:57:10'),
+(63, 688, 89, 27, NULL, 110.00, 'online', 'confirmada', NULL, NULL, NULL, NULL, '2026-10-09 13:00:00', '2026-10-09 17:56:00'),
 (64, 689, 88, 82, NULL, 135.00, 'online', 'concluida', NULL, NULL, '2026-09-25 10:00:00', '2026-09-25 10:50:00', '2026-09-20 12:00:00', '2026-10-09 16:59:14'),
 (65, 690, 91, 83, NULL, 125.00, 'online', 'confirmada', NULL, NULL, NULL, NULL, '2026-10-07 15:00:00', '2026-10-09 16:59:14'),
 (66, 691, 90, 84, NULL, 145.00, 'online', 'aguardando_pagamento', NULL, NULL, NULL, NULL, '2026-10-09 11:00:00', '2026-10-09 16:59:14'),
 (67, 692, 89, 85, NULL, 110.00, 'online', 'cancelada', 'Paciente solicitou o cancelamento da consulta.', '2026-10-05 14:30:00', NULL, NULL, '2026-10-01 13:00:00', '2026-10-09 16:59:14'),
 (68, 693, 87, 86, NULL, 120.00, 'online', 'concluida', NULL, NULL, '2026-09-29 13:00:00', '2026-09-29 13:50:00', '2026-09-24 18:00:00', '2026-10-09 16:59:14'),
-(69, 694, 87, 86, NULL, 120.00, 'online', 'confirmada', NULL, NULL, NULL, NULL, '2026-10-08 12:00:00', '2026-10-09 16:59:14');
+(69, 694, 87, 86, NULL, 120.00, 'online', 'confirmada', NULL, NULL, NULL, NULL, '2026-10-08 12:00:00', '2026-10-09 16:59:14'),
+(106, 1098, 87, 27, NULL, 120.00, 'online', 'concluida', NULL, NULL, '2026-10-22 19:00:00', '2026-10-22 19:50:00', '2026-10-23 16:27:05', '2026-10-23 16:27:05');
 
 -- --------------------------------------------------------
 
@@ -223,9 +224,8 @@ CREATE TABLE `favoritos` (
 --
 
 INSERT INTO `favoritos` (`paciente_id`, `psicologo_id`, `criado_em`) VALUES
-(27, 87, '2026-10-09 17:01:35'),
+(27, 21, '2026-10-16 16:46:06'),
 (27, 88, '2026-10-09 17:01:35'),
-(27, 89, '2026-10-09 17:01:35'),
 (27, 91, '2026-10-09 17:01:35');
 
 -- --------------------------------------------------------
@@ -260,7 +260,9 @@ INSERT INTO `historico_status_consultas` (`id`, `consulta_id`, `status_anterior`
 (58, 61, 'confirmada', 'concluida', 87, 'Consulta finalizada.', '2026-10-02 18:50:00'),
 (59, 62, 'aguardando_pagamento', 'confirmada', 27, 'Pagamento aprovado.', '2026-10-06 12:10:00'),
 (60, 63, NULL, 'aguardando_pagamento', 27, 'Consulta reservada e aguardando pagamento.', '2026-10-09 13:00:00'),
-(61, 67, 'confirmada', 'cancelada', 85, 'Cancelamento solicitado pelo paciente.', '2026-10-05 17:30:00');
+(61, 67, 'confirmada', 'cancelada', 85, 'Cancelamento solicitado pelo paciente.', '2026-10-05 17:30:00'),
+(62, 63, 'aguardando_pagamento', 'confirmada', 27, 'Pagamento simulado aprovado (projeto acadêmico).', '2026-10-09 17:56:00'),
+(107, 106, NULL, 'concluida', 27, 'Consulta concluída criada para teste da avaliação.', '2026-10-22 22:50:00');
 
 -- --------------------------------------------------------
 
@@ -419,7 +421,8 @@ INSERT INTO `horarios_agenda` (`id`, `psicologo_id`, `inicio_em`, `fim_em`, `sta
 (716, 91, '2026-10-13 12:00:00', '2026-10-13 12:50:00', 'livre', '2026-10-09 17:00:42', '2026-10-09 17:00:42'),
 (717, 91, '2026-10-16 10:00:00', '2026-10-16 10:50:00', 'livre', '2026-10-09 17:00:42', '2026-10-09 17:00:42'),
 (718, 91, '2026-10-20 14:00:00', '2026-10-20 14:50:00', 'livre', '2026-10-09 17:00:42', '2026-10-09 17:00:42'),
-(719, 91, '2026-10-23 11:00:00', '2026-10-23 11:50:00', 'livre', '2026-10-09 17:00:42', '2026-10-09 17:00:42');
+(719, 91, '2026-10-23 11:00:00', '2026-10-23 11:50:00', 'livre', '2026-10-09 17:00:42', '2026-10-09 17:00:42'),
+(1098, 87, '2026-10-22 19:00:00', '2026-10-22 19:50:00', 'reservado', '2026-10-23 16:27:05', '2026-10-23 16:27:05');
 
 -- --------------------------------------------------------
 
@@ -465,19 +468,21 @@ CREATE TABLE `notificacoes` (
 INSERT INTO `notificacoes` (`id`, `usuario_id`, `consulta_id`, `tipo`, `titulo`, `mensagem`, `lida_em`, `criado_em`) VALUES
 (10, 27, 9, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', '2026-09-25 00:49:46', '2026-09-25 00:49:24'),
 (11, 21, 9, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', '2026-09-25 00:52:06', '2026-09-25 00:49:24'),
-(12, 27, 9, 'consulta', 'Consulta cancelada', 'A consulta foi cancelada. Valores pagos dependem de processamento de reembolso.', NULL, '2026-09-25 00:55:42'),
+(12, 27, 9, 'consulta', 'Consulta cancelada', 'A consulta foi cancelada. Valores pagos dependem de processamento de reembolso.', '2026-10-09 17:47:32', '2026-09-25 00:55:42'),
 (13, 21, 9, 'consulta', 'Consulta cancelada', 'A consulta foi cancelada. Valores pagos dependem de processamento de reembolso.', '2026-09-25 18:20:54', '2026-09-25 00:55:42'),
-(14, 27, 10, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', NULL, '2026-09-25 17:18:41'),
+(14, 27, 10, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', '2026-10-09 17:47:30', '2026-09-25 17:18:41'),
 (15, 21, 10, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', '2026-09-25 18:21:00', '2026-09-25 17:18:41'),
-(51, 27, 26, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', NULL, '2026-10-02 18:17:19'),
+(51, 27, 26, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', '2026-10-09 17:47:27', '2026-10-02 18:17:19'),
 (52, 21, 26, 'consulta', 'Novo agendamento', 'Uma consulta foi agendada e aguarda confirmação financeira.', NULL, '2026-10-02 18:17:19'),
-(142, 27, 26, 'consulta', 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.', NULL, '2026-10-09 16:40:40'),
+(142, 27, 26, 'consulta', 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.', '2026-10-09 17:47:19', '2026-10-09 16:40:40'),
 (143, 21, 26, 'consulta', 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.', NULL, '2026-10-09 16:40:40'),
-(144, 27, 62, 'consulta', 'Consulta confirmada', 'Sua próxima consulta foi confirmada com sucesso.', NULL, '2026-10-06 12:11:00'),
-(145, 27, 63, 'pagamento', 'Pagamento pendente', 'Existe uma consulta aguardando confirmação de pagamento.', NULL, '2026-10-09 13:02:00'),
+(144, 27, 62, 'consulta', 'Consulta confirmada', 'Sua próxima consulta foi confirmada com sucesso.', '2026-10-09 17:47:25', '2026-10-06 12:11:00'),
+(145, 27, 63, 'pagamento', 'Pagamento pendente', 'Existe uma consulta aguardando confirmação de pagamento.', '2026-10-09 17:47:22', '2026-10-09 13:02:00'),
 (146, 83, 65, 'consulta', 'Consulta confirmada', 'Sua consulta foi confirmada e já está disponível em Minhas consultas.', NULL, '2026-10-07 15:06:00'),
 (147, 84, 66, 'pagamento', 'Pagamento pendente', 'Finalize o pagamento para confirmar sua consulta.', NULL, '2026-10-09 11:02:00'),
-(148, 86, 69, 'consulta', 'Próxima consulta', 'Você possui uma nova consulta confirmada.', NULL, '2026-10-08 12:06:00');
+(148, 86, 69, 'consulta', 'Próxima consulta', 'Você possui uma nova consulta confirmada.', NULL, '2026-10-08 12:06:00'),
+(149, 27, 63, 'consulta', 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.', NULL, '2026-10-09 17:56:00'),
+(150, 89, 63, 'consulta', 'Pagamento simulado aprovado', 'O pagamento simulado foi registrado e a consulta está confirmada.', NULL, '2026-10-09 17:56:00');
 
 -- --------------------------------------------------------
 
@@ -537,12 +542,13 @@ INSERT INTO `pagamentos` (`id`, `consulta_id`, `metodo_pagamento_id`, `provedor`
 (25, 60, NULL, 'simulado', 'DEMO-MARY-60', 'pix', 'aprovado', 120.00, 'BRL', NULL, '2026-09-15 10:05:00', NULL, '2026-09-15 13:04:00', '2026-10-09 16:57:10'),
 (26, 61, NULL, 'simulado', 'DEMO-MARY-61', 'cartao', 'aprovado', 120.00, 'BRL', NULL, '2026-09-28 11:35:00', NULL, '2026-09-28 14:34:00', '2026-10-09 16:57:10'),
 (27, 62, NULL, 'simulado', 'DEMO-MARY-62', 'pix', 'aprovado', 135.00, 'BRL', NULL, '2026-10-06 09:10:00', NULL, '2026-10-06 12:09:00', '2026-10-09 16:57:10'),
-(28, 63, NULL, 'simulado', 'PENDENTE-MARY-63', 'pix', 'pendente', 110.00, 'BRL', '2026-10-20 18:30:00', NULL, NULL, '2026-10-09 13:01:00', '2026-10-09 16:57:10'),
+(28, 63, NULL, 'simulado', 'PENDENTE-MARY-63', 'pix', 'cancelado', 110.00, 'BRL', '2026-10-20 18:30:00', NULL, NULL, '2026-10-09 13:01:00', '2026-10-09 17:56:00'),
 (29, 64, NULL, 'simulado', 'DEMO-ANA-64', 'pix', 'aprovado', 135.00, 'BRL', NULL, '2026-09-20 09:10:00', NULL, '2026-09-20 12:09:00', '2026-10-09 16:59:14'),
 (30, 65, NULL, 'simulado', 'DEMO-BRUNO-65', 'cartao', 'aprovado', 125.00, 'BRL', NULL, '2026-10-07 12:05:00', NULL, '2026-10-07 15:04:00', '2026-10-09 16:59:14'),
 (31, 66, NULL, 'simulado', 'PENDENTE-CAROLINA-66', 'pix', 'pendente', 145.00, 'BRL', '2026-10-21 16:30:00', NULL, NULL, '2026-10-09 11:01:00', '2026-10-09 16:59:14'),
 (32, 68, NULL, 'simulado', 'DEMO-EDUARDA-68', 'pix', 'aprovado', 120.00, 'BRL', NULL, '2026-09-24 15:05:00', NULL, '2026-09-24 18:04:00', '2026-10-09 16:59:14'),
-(33, 69, NULL, 'simulado', 'DEMO-EDUARDA-FUTURA-69', 'cartao', 'aprovado', 120.00, 'BRL', NULL, '2026-10-08 09:05:00', NULL, '2026-10-08 12:04:00', '2026-10-09 16:59:14');
+(33, 69, NULL, 'simulado', 'DEMO-EDUARDA-FUTURA-69', 'cartao', 'aprovado', 120.00, 'BRL', NULL, '2026-10-08 09:05:00', NULL, '2026-10-08 12:04:00', '2026-10-09 16:59:14'),
+(34, 63, NULL, 'simulacao_academica', '076622b2b2ce26b351aafc2c5c1db06f1b6d8612e70421bf', 'pix', 'aprovado', 110.00, 'BRL', NULL, '2026-10-09 17:56:00', NULL, '2026-10-09 17:56:00', '2026-10-09 17:56:00');
 
 -- --------------------------------------------------------
 
@@ -802,7 +808,7 @@ INSERT INTO `usuarios` (`id`, `nome`, `email`, `senha_hash`, `papel`, `telefone`
 (6, 'NENA', 'nine@gmail.com', '$2y$10$HelfrPXhPZSu2GsfyE8bOelrucR63E7QOHP72xRVhIliFYd.86lpW', 'paciente', NULL, NULL, 'ativo', NULL, NULL, '2026-09-24 23:28:20', '2026-09-24 23:28:20'),
 (20, 'sasa', 'sasa@gmail.com', '$2y$10$l.8SJEWiMr6DOrwGlFdmXe6jXy4i5F6S46Yiac913kC4kV5VQ7/Ym', 'paciente', NULL, NULL, 'ativo', NULL, NULL, '2026-09-24 23:56:26', '2026-09-24 23:56:26'),
 (21, 'Nina Psi', 'psinina@gmail.com', '$2y$10$rv2CeFkrd/yERe90Z7WOfuix55gt71jda1nAy8g8TF2C4wXsdd6KK', 'psicologo', '18996127814', NULL, 'ativo', NULL, '2026-10-09 16:46:50', '2026-09-24 23:58:20', '2026-10-09 16:46:50'),
-(27, 'mary', 'mary@gmail.com', '$2y$10$2dSbmVEzUH9.9N2lRqgIKOTE4eyC7Lu2WUU/sa09Y2o.lOJWYoAye', 'paciente', '18996320648', NULL, 'ativo', NULL, '2026-10-09 17:02:08', '2026-09-25 00:48:32', '2026-10-09 17:02:08'),
+(27, 'mary', 'mary@gmail.com', '$2y$10$etUz/wwsm/RNPY1qQnDIge6dSoroh/hwJoH6RB80nKfjAsWztcdz2', 'paciente', '18996320648', '3dce654ea29967deb372aff6ca14743b56e5e66ff7a14642.png', 'ativo', NULL, '2026-10-23 16:15:09', '2026-09-25 00:48:32', '2026-10-23 16:15:09'),
 (82, 'Ana Souza', 'ana.souza@mindlyteste.com', '$2y$12$ncLNANl/3KyXvgOlLOI2Xu9qUdwrMFCUH2UTIdy0DkJsw7qDisOjq', 'paciente', '18999110001', NULL, 'ativo', '2026-10-09 13:54:58', NULL, '2026-10-09 16:54:58', '2026-10-09 16:54:58'),
 (83, 'Bruno Martins', 'bruno.martins@mindlyteste.com', '$2y$12$ncLNANl/3KyXvgOlLOI2Xu9qUdwrMFCUH2UTIdy0DkJsw7qDisOjq', 'paciente', '18999110002', NULL, 'ativo', '2026-10-09 13:54:58', NULL, '2026-10-09 16:54:58', '2026-10-09 16:54:58'),
 (84, 'Carolina Alves', 'carolina.alves@mindlyteste.com', '$2y$12$ncLNANl/3KyXvgOlLOI2Xu9qUdwrMFCUH2UTIdy0DkJsw7qDisOjq', 'paciente', '18999110003', NULL, 'ativo', '2026-10-09 13:54:58', NULL, '2026-10-09 16:54:58', '2026-10-09 16:54:58'),
@@ -1078,7 +1084,7 @@ ALTER TABLE `bloqueios_agenda`
 -- AUTO_INCREMENT de tabela `consentimentos`
 --
 ALTER TABLE `consentimentos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=135;
 
 --
 -- AUTO_INCREMENT de tabela `consultas`
@@ -1096,13 +1102,13 @@ ALTER TABLE `disponibilidades_semanais`
 -- AUTO_INCREMENT de tabela `especialidades`
 --
 ALTER TABLE `especialidades`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `historico_status_consultas`
 --
 ALTER TABLE `historico_status_consultas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=108;
 
 --
 -- AUTO_INCREMENT de tabela `horarios_agenda`
@@ -1120,7 +1126,7 @@ ALTER TABLE `metodos_pagamento`
 -- AUTO_INCREMENT de tabela `notificacoes`
 --
 ALTER TABLE `notificacoes`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=259;
 
 --
 -- AUTO_INCREMENT de tabela `pagamentos`
@@ -1132,7 +1138,7 @@ ALTER TABLE `pagamentos`
 -- AUTO_INCREMENT de tabela `prontuarios`
 --
 ALTER TABLE `prontuarios`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT de tabela `reembolsos`
@@ -1144,13 +1150,13 @@ ALTER TABLE `reembolsos`
 -- AUTO_INCREMENT de tabela `registros_prontuario`
 --
 ALTER TABLE `registros_prontuario`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de tabela `resumos_compartilhados`
 --
 ALTER TABLE `resumos_compartilhados`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de tabela `salas_atendimento`
@@ -1168,7 +1174,7 @@ ALTER TABLE `tokens_login_persistente`
 -- AUTO_INCREMENT de tabela `tokens_redefinicao_senha`
 --
 ALTER TABLE `tokens_redefinicao_senha`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de tabela `tokens_verificacao_email`
@@ -1180,7 +1186,7 @@ ALTER TABLE `tokens_verificacao_email`
 -- AUTO_INCREMENT de tabela `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=154;
 
 --
 -- AUTO_INCREMENT de tabela `versoes_registros_prontuario`
