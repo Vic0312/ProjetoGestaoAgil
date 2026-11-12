@@ -14,10 +14,10 @@ if (!isset($routes[$action])) {
 try {
     Controlador::$action();
 } catch (DomainException $ex) {
-    flash($ex->getMessage());
+    flash($ex->getMessage(), 'error');
 } catch (Throwable $ex) {
     error_log('Mindly: falha na autenticação (' . get_class($ex) . ').');
-    flash('Serviço temporariamente indisponível. Tente novamente mais tarde.');
+    flash('Serviço temporariamente indisponível. Tente novamente mais tarde.', 'error');
 }
 if ($action === 'cadastro') {
     // Lista explícita: nunca armazenar senhas na sessão ou reapresentá-las no HTML.

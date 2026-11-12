@@ -17,6 +17,7 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
 
 <body>
     <?php abrirLayout('paciente', 'historico', 'Histórico de atendimentos', 'Consulte suas sessões e informações compartilhadas com você.', $currentUser['nome']); ?>
+    <p><a class="botao botao-secundario" href="../processamento/exportar.php?tipo=prontuario"><?= icon('download') ?> Baixar prontuário em PDF</a></p>
     <div class="historico-grid">
         <section class="cartao timeline-card">
             <div class="cartao-cabecalho">

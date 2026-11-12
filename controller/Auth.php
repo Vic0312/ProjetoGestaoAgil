@@ -29,15 +29,17 @@ function csrfField(): string
 {
     return '<input type="hidden" name="csrf" value="' . e(csrf()) . '">';
 }
-function flash(string $message): void
+function flash(string $message, string $type = 'success'): void
 {
     $_SESSION['flash'] = $message;
+    $_SESSION['flash_type'] = in_array($type, ['success', 'error', 'info'], true) ? $type : 'info';
 }
 function showMessage(): void
 {
     if (isset($_SESSION['flash'])) {
-        echo '<p class="mensagem-formulario" role="alert">' . e($_SESSION['flash']) . '</p>';
-        unset($_SESSION['flash']);
+        $type = $_SESSION['flash_type'] ?? 'info';
+        echo '<p class="mensagem-formulario mensagem-' . e($type) . '" role="' . ($type === 'error' ? 'alert' : 'status') . '">' . e($_SESSION['flash']) . '</p>';
+        unset($_SESSION['flash'], $_SESSION['flash_type']);
     }
 }
 function input(string $key): string

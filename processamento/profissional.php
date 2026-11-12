@@ -27,7 +27,7 @@ try {
     $back = ProfissionalController::run($user, $action);
     unset($_SESSION['operacao_anterior']);
 } catch (DomainException $error) {
-    flash($error->getMessage());
+    flash($error->getMessage(), 'error');
     // Dados clínicos e arquivos não são copiados para a sessão nem para logs.
     $fields = match ($action) { 'perfil' => ['nome_profissional', 'area_atuacao', 'biografia', 'abordagem', 'telefone', 'valor_consulta', 'duracao', 'especialidades'], 'intervalo', 'bloqueio' => ['id', 'dia', 'inicio', 'fim', 'ativa', 'motivo'], default => []};
     $old = [];
@@ -37,6 +37,6 @@ try {
     $_SESSION['operacao_anterior'] = ['acao' => $action, 'dados' => $old];
 } catch (Throwable $error) {
     error_log('Mindly: falha na operação profissional (' . get_class($error) . ').');
-    flash('Não foi possível concluir a operação. Tente novamente.');
+    flash('Não foi possível concluir a operação. Tente novamente.', 'error');
 }
 redirect($back);

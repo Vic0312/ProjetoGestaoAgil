@@ -79,6 +79,7 @@ class Controlador
         }
         if ($role === 'paciente') {
             authenticate(accountById($id));
+            flash('Cadastro realizado com sucesso. Bem-vindo ao Mindly!');
             redirect(dashboard($role));
         }
         unset($_SESSION['user_id'], $_SESSION['password_stamp']);
@@ -98,6 +99,7 @@ class Controlador
             throw new DomainException($problem);
         query('UPDATE usuarios SET ultimo_acesso_em=UTC_TIMESTAMP() WHERE id=?', [$user['id']]);
         authenticate($user);
+        flash('Login realizado com sucesso.');
         redirect(dashboard($user['papel']));
     }
     public static function recuperar(): void

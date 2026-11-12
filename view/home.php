@@ -10,6 +10,7 @@ function oldRegistration(string $key): string { global $old; return e($old[$key]
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Mindly - plataforma de atendimento psicológico online.">
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/mensagens.css">
     <title>Mindly | Cuidado psicológico online</title>
 </head>
 <body>

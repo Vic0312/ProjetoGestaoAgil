@@ -16,6 +16,10 @@ function client(): CurlHandle
     curl_setopt_array($c, [CURLOPT_COOKIEFILE => '', CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 30]);
     return $c;
 }
+function location(array $response, string $path): bool
+{
+    return $response['status'] === 303 && (bool) preg_match('~^Location: [^\r\n]*' . preg_quote($path, '~') . '\r?$~mi', $response['headers']);
+}
 function http(CurlHandle $c, string $path, ?array $post = null): array
 {
     global $base;
@@ -75,6 +79,7 @@ try {
     verify(post($clients['p1'], 'paciente', $profile)['status'] === 303, 'Salvar perfil');
     $html = page($clients['p1'], 'perfilPaciente.php');
     verify(str_contains($html, 'Perfil atualizado com sucesso.') && str_contains($html, 'Paciente &lt;Teste&gt;'), 'Sucesso e escaping do nome');
+    verify(!str_contains(page($clients['p1'], 'perfilPaciente.php'), 'Perfil atualizado com sucesso.'), 'Mensagem flash consumida uma única vez');
     verify(accountById($p1)['email'] === $profile['email'] && accountById($p2)['nome'] === $users['p2']['nome'], 'Atualização somente da conta logada');
     verify(query('SELECT data_nascimento FROM pacientes WHERE usuario_id=?', [$p1])->fetchColumn() === '1995-03-12', 'Nascimento persistido');
     $png = tempnam(sys_get_temp_dir(), 'mindly-avatar-'); $temporaryFiles[] = $png;
@@ -92,6 +97,16 @@ try {
     $largeFile = tempnam(sys_get_temp_dir(), 'mindly-large-'); $temporaryFiles[] = $largeFile; $large = fopen($largeFile, 'wb'); ftruncate($large, 2 * 1024 * 1024 + 1); fclose($large);
     postFiles($clients['p1'], 'paciente', $profile, ['foto' => new CURLFile($largeFile, 'image/png', 'large.png')]);
     verify(accountById($p1)['avatar_url'] === $avatarNames[0], 'Upload acima de 2 MB preserva a foto anterior');
+    $psyProfile=['acao'=>'perfil','nome_profissional'=>$users['s1']['nome'],'valor_consulta'=>'150','duracao'=>'50','usuario_id'=>$s2];
+    verify(postFiles($clients['s1'],'profissional',$psyProfile,['foto'=>new CURLFile($png,'image/png','avatar.png')])['status']===303,'Psicólogo altera foto com upload real');
+    $psyAvatar=accountById($s1)['avatar_url'];$avatarNames[]=$psyAvatar;
+    verify((bool)$psyAvatar && !accountById($s2)['avatar_url'],'Foto profissional respeita identidade da sessão');
+    postFiles($clients['s1'],'profissional',$psyProfile,['foto'=>new CURLFile($invalidFile,'text/plain','invalid.txt')]);
+    verify(accountById($s1)['avatar_url']===$psyAvatar && str_contains(page($clients['s1'],'perfilProfissional.php'),'mensagem-error'),'Formato inválido preserva foto e exibe erro ao psicólogo');
+    postFiles($clients['s1'],'profissional',$psyProfile,['foto'=>new CURLFile($largeFile,'image/png','large.png')]);
+    verify(accountById($s1)['avatar_url']===$psyAvatar,'Foto profissional acima de 2 MB recusada');
+    post($clients['s1'],'auth',['acao'=>'logout']);post($clients['s1'],'auth',['acao'=>'login','email'=>$users['s1']['email'],'senha'=>$pass]);
+    verify(accountById($s1)['avatar_url']===$psyAvatar && http($clients['s1'],'processamento/avatar.php?id='.$s1)['status']===200,'Foto profissional persiste após novo login');
     $change = ['acao'=>'alterarSenha','senha_atual'=>$pass,'nova_senha'=>'NovaSenha_56','confirmar_senha'=>'NovaSenha_56'];
     verify(post($clients['p1'], 'auth', array_replace($change,['csrf'=>'inválido']))['status'] === 403, 'Troca de senha exige CSRF');
     post($clients['p1'], 'auth', array_replace($change,['senha_atual'=>'senha errada']));
@@ -270,6 +285,14 @@ try {
     verify((int) query('SELECT COUNT(*) FROM avaliacoes WHERE consulta_id=?', [$done])->fetchColumn() === 1, 'Avaliacao duplicada impedida');
     verify(str_contains(page($clients['p2'], 'minhasConsultas.php?aba=realizadas'), "Voc\u{00EA} avaliou esta consulta com 5 de 5 estrelas"), 'Paciente ve a avaliacao enviada');
     verify((new MindlyData(accountById($p1)))->professional($s1)['avaliacoes'] > 0, 'Avaliacao publicada integra a classificacao publica do profissional');
+    // A avaliação de outro atendimento pode ter nota mínima e comentário vazio.
+    $noCommentSlot=$slots[4]['id'];
+    query("UPDATE horarios_agenda SET inicio_em=?,fim_em=?,status='reservado' WHERE id=?",[gmdate('Y-m-d H:i:s',time()-18000),gmdate('Y-m-d H:i:s',time()-15000),$noCommentSlot]);
+    query("INSERT INTO consultas(paciente_id,psicologo_id,horario_id,valor,status) VALUES (?,?,?,150,'concluida')",[$p2,$s1,$noCommentSlot]);
+    $noComment=(int)db()->lastInsertId();
+    post($clients['p2'],'paciente',['acao'=>'avaliar_consulta','consulta_id'=>$noComment,'nota'=>'1']);
+    $minimalReview=query('SELECT nota,comentario FROM avaliacoes WHERE consulta_id=?',[$noComment])->fetch();
+    verify($minimalReview && (int)$minimalReview['nota']===1 && empty($minimalReview['comentario']),'Nota 1 e comentário opcional persistem');
     $multi = curl_multi_init();
     try {
         foreach (['p1', 'p2'] as $key) {

@@ -5,7 +5,7 @@ if (isset($_GET['token']) && is_string($_GET['token'])) {
         $_SESSION['reset_token'] = $_GET['token'];
     else {
         unset($_SESSION['reset_token']);
-        flash('Link inválido. Solicite novas orientações.');
+        flash('Link inválido. Solicite novas orientações.', 'error');
     }
     redirect('view/redefinirSenha.php');
 }
@@ -19,6 +19,7 @@ unset($_SESSION['reset_token']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="stylesheet" href="../css/redefinirSenha.css">
+    <link rel="stylesheet" href="../css/mensagens.css">
     <title>Mindly | Redefinir senha</title>
 </head>
 

@@ -64,6 +64,8 @@ try {
             verify(str_contains($dash,'Você ainda não possui consultas agendadas.') && str_contains($dash,'<strong>0</strong><span>consultas realizadas</span>'),'indicadores zerados para novo paciente');
             verify(str_contains(htmlPage($clients[$key],'pagamentosPaciente.php'),'Você ainda não possui pagamentos registrados.'),'pagamentos vazios');
             verify(str_contains(htmlPage($clients[$key],'prontuarioPaciente.php'),'Nenhum registro disponível até o momento.'),'histórico vazio');
+            $emptyPdf=http($clients[$key],'processamento/exportar.php?tipo=prontuario');
+            verify($emptyPdf['status']===200 && str_starts_with($emptyPdf['body'],'%PDF-'),'PDF válido para paciente sem histórico');
         } else verify(str_contains($dash,'Nenhum horário disponível cadastrado.'),'dashboard profissional vazio');
     }
     $p1=(int)$accounts['p1']['id'];$p2=(int)$accounts['p2']['id'];$s1=(int)$accounts['s1']['id'];$s2=(int)$accounts['s2']['id'];
@@ -119,10 +121,75 @@ try {
     query("UPDATE psicologos SET status_verificacao='pendente' WHERE usuario_id=?",[$s2]);
     verify(http($clients['p1'],'view/perfilPsicologo.php?psicologo_id='.$s2)['status']===404,'perfil público pendente oculto');
     query("UPDATE psicologos SET status_verificacao='aprovado' WHERE usuario_id=?",[$s2]);
+    $professionalForm=http($clients['s1'],'view/login.php')['body'];
+    preg_match('/name="csrf" value="([a-f0-9]+)"/',$professionalForm,$token);
+    $share=['acao'=>'resumo','consulta_id'=>$past1,'paciente_id'=>$p1,'resumo'=>$shared1,'versao'=>hash('sha256',$shared1),'compartilhar'=>'1','csrf'=>$token[1]];
+    verify(http($clients['s1'],'processamento/profissional.php',$share)['status']===303,'Compartilhamento pelo formulário profissional redireciona');
+    verify(str_contains(htmlPage($clients['s1'],'prontuarioPsicologo.php?paciente_id='.$p1),'Resumo compartilhado explicitamente'),'Compartilhamento confirma sucesso na tela correta');
+    $clinical=['acao'=>'registro','consulta_id'=>$past1,'paciente_id'=>$p1,'observacoes'=>$private1,'versao'=>hash('sha256',$private1),'csrf'=>$token[1]];
+    http($clients['s1'],'processamento/profissional.php',$clinical);
+    $created['versoes_registros_prontuario']=query('SELECT v.id FROM versoes_registros_prontuario v JOIN registros_prontuario r ON r.id=v.registro_id WHERE r.consulta_id=?',[$past1])->fetchAll(PDO::FETCH_COLUMN);
+    verify(str_contains(htmlPage($clients['s1'],'prontuarioPsicologo.php?paciente_id='.$p1),'Registro clínico salvo.'),'Registro privado persiste e confirma sucesso');
+    verify(!str_contains(htmlPage($clients['p1'],'prontuarioPaciente.php'),$private1),'Registro salvo pelo formulário permanece privado');
     // Administrador de teste, sem credencial fixa e removido no encerramento.
     $adminEmail='admin-'.$tag.'@example.invalid';$emails[]=$adminEmail;
     fixture('usuarios',['nome'=>'Admin '.$tag,'email'=>$adminEmail,'senha_hash'=>password_hash($pass,PASSWORD_DEFAULT),'papel'=>'admin','status'=>'ativo']);
     $clients['admin']=browserClient();sendForm($clients['admin'],'login',['email'=>$adminEmail,'senha'=>$pass]);
+    $longConsultation=appointment($p1,$s1,$utc->modify('-10 days')->format('Y-m-d H:i:s'),'concluida','137.42');
+    $longSummary='INICIO-CRONOLOGICO-'.$tag." Ação, atenção e informações compartilhadas.\n".str_repeat("Texto compartilhado para validar paginação e leitura em português.\n",100);
+    fixture('resumos_compartilhados',['consulta_id'=>$longConsultation,'texto'=>$longSummary,'compartilhado_por_psicologo_id'=>$s1]);
+    // Downloads reais: autenticação, validação de parâmetros e conteúdo agregado.
+    $anonymous=browserClient();
+    foreach (['relatorios','prontuario'] as $type)
+        verify(http($anonymous,'processamento/exportar.php?tipo='.$type)['status']===303,'download exige autenticação: '.$type);
+    verify(http($clients['admin'],'processamento/exportar.php?tipo=relatorios',[])['status']===405,'Download rejeita método POST');
+    verify(http($clients['p1'],'processamento/exportar.php?tipo=relatorios')['status']===403,'paciente não exporta relatório administrativo');
+    verify(http($clients['s1'],'processamento/exportar.php?tipo=relatorios')['status']===403,'psicólogo não exporta relatório administrativo');
+    verify(http($clients['admin'],'processamento/exportar.php?tipo=prontuario')['status']===403,'admin não baixa prontuário do paciente');
+    foreach (['tipo[]=relatorios','tipo=invalido','tipo=relatorios&inicio=2020-01-01'] as $params)
+        verify(http($clients['admin'],'processamento/exportar.php?'.$params)['status']===400,'parâmetros de exportação rejeitados: '.$params);
+    $csv=http($clients['admin'],'processamento/exportar.php?tipo=relatorios');
+    verify($csv['status']===200 && str_contains($csv['headers'],'text/csv') && str_contains($csv['headers'],'attachment;'),'CSV disponível como download');
+    verify(str_starts_with($csv['body'],"\xEF\xBB\xBF") && mb_check_encoding($csv['body'],'UTF-8'),'CSV UTF-8 com BOM para Excel');
+    $rows=array_map(fn($line)=>str_getcsv($line,';','"',''),explode("\r\n",trim(substr($csv['body'],3))));
+    $indicators=array_column(array_slice($rows,1),2,1);
+    verify((int)$indicators['Usuários cadastrados']===(int)query('SELECT COUNT(*) FROM usuarios')->fetchColumn(),'CSV usa contagem real de usuários');
+    verify(isset($indicators['Consultas concluídas'],$indicators['Consultas canceladas'],$indicators['Média diária de atendimentos']) && str_contains($csv['body'],'Gerado em'),'CSV contém indicadores e data de geração');
+    verify(!str_contains($csv['body'],$accounts['p1']['email']) && !str_contains($csv['body'],$private1) && !str_contains($csv['body'],$shared1),'CSV sem e-mail ou conteúdo clínico');
+    require_once __DIR__.'/../vendor/tcpdf/tcpdf_parser.php';
+    foreach (['p1','p2'] as $key) {
+        $pdf=http($clients[$key],'processamento/exportar.php?tipo=prontuario');
+        verify($pdf['status']===200 && str_contains($pdf['headers'],'application/pdf') && str_contains($pdf['headers'],'attachment;') && str_starts_with($pdf['body'],'%PDF-'),'PDF disponível como download: '.$key);
+        $parsed=(new TCPDF_PARSER($pdf['body']))->getParsedData();
+        verify(count($parsed[0])>0 && count($parsed[1])>0,'PDF aberto pelo parser PDF: '.$key);
+        $extractor='C:/Program Files/Git/mingw64/bin/pdftotext.exe';
+        if (is_file($extractor)) {
+            $temporaryPdf=tempnam(sys_get_temp_dir(),'mindly-pdf-');
+            try {
+                file_put_contents($temporaryPdf,$pdf['body']);
+                $process=proc_open([$extractor,'-enc','UTF-8',$temporaryPdf,'-'],[1=>['pipe','w'],2=>['pipe','w']],$pipes);
+                if (!is_resource($process)) throw new RuntimeException('Não foi possível abrir leitor PDF');
+                $text=stream_get_contents($pipes[1]);$errors=stream_get_contents($pipes[2]);fclose($pipes[1]);fclose($pipes[2]);
+                verify(proc_close($process)===0 && $errors==='','Leitor Poppler abre PDF sem erros: '.$key);
+                verify(str_contains($text,$key==='p1'?$shared1:$shared2) && !str_contains($text,$private1) && !str_contains($text,$private2),'Texto extraído confirma conteúdo e privacidade: '.$key);
+                if ($key==='p1') {
+                    verify(str_contains($text,'Ação, atenção'),'PDF preserva acentos');
+                    verify((bool)preg_match('/Página\s+2\s+de/u',$text),'PDF preserva paginação');
+                    verify(strpos($text,'INICIO-CRONOLOGICO-')<strpos($text,$shared1),'PDF apresenta registros em ordem cronológica');
+                }
+            } finally { if (is_file($temporaryPdf)) unlink($temporaryPdf); }
+        }
+        $streams='';
+        preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s',$pdf['body'],$matches);
+        foreach ($matches[1] as $stream) $streams.=(@gzuncompress($stream) ?: $stream);
+        $own=$key==='p1'?$shared1:$shared2;$other=$key==='p1'?$shared2:$shared1;
+        $contains=function($text) use ($streams) {
+            $utf16=mb_convert_encoding($text,'UTF-16BE','UTF-8');
+            return str_contains($streams,$utf16) || str_contains(strtolower($streams),bin2hex($utf16));
+        };
+        verify($contains($own) && !$contains($other) && !$contains($private1) && !$contains($private2),'PDF contém só resumo autorizado, sem anotações privadas: '.$key);
+        verify(http($clients[$key],'processamento/exportar.php?tipo=prontuario&paciente_id='.($key==='p1'?$p2:$p1))['status']===400,'PDF recusa manipulação de paciente: '.$key);
+    }
     foreach(glob(__DIR__.'/../view/*.php') as $file){
         $source=file_get_contents($file);if(!preg_match("/requireRole\('([^']+)'\)/",$source,$match)) continue;
         $key=basename($file)==='perfilPsicologo.php'?'p1':['paciente'=>'p1','psicologo'=>'s1','admin'=>'admin'][$match[1]];
@@ -138,7 +205,7 @@ try {
     echo "Todos os testes de dados reais passaram.\n";
 } finally {
     // Ordem das FKs; apenas IDs que este processo criou.
-    foreach(['avaliacoes','notificacoes','resumos_compartilhados','registros_prontuario','prontuarios','pagamentos','metodos_pagamento','consultas','horarios_agenda','disponibilidades_semanais','bloqueios_agenda'] as $table){
+    foreach(['avaliacoes','notificacoes','resumos_compartilhados','versoes_registros_prontuario','registros_prontuario','prontuarios','pagamentos','metodos_pagamento','consultas','horarios_agenda','disponibilidades_semanais','bloqueios_agenda'] as $table){
         foreach($created[$table] ?? [] as $id) query("DELETE FROM $table WHERE id=?",[$id]);
     }
     foreach($emails as $email){$u=accountByEmail($email);if(!$u) continue;

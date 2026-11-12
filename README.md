@@ -1,3 +1,7 @@
+# Entrega final — 12/11/2026
+
+As tasks #59 (mensagens), #62 (CSV administrativo) e #63 (PDF do prontuário) estão implementadas. Consulte [RELATORIO_FINAL.md](RELATORIO_FINAL.md) para arquivos, dependência PDF, testes executados, limites e roteiro de demonstração. Esta entrega prevalece sobre avisos antigos de exportação indisponível abaixo.
+
 # Entrega: dashboard, pagamentos e registros do paciente — 09/10/2026
 
 Esta seção descreve o estado atual e prevalece sobre os avisos antigos de pagamento indisponível abaixo.

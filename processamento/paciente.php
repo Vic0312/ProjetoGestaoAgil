@@ -18,18 +18,18 @@ if (in_array(input('acao'), ['favoritar', 'desfavoritar'], true)) {
             query('DELETE FROM favoritos WHERE paciente_id=? AND psicologo_id=?', [$user['id'], $id]);
             flash('Psicólogo removido dos favoritos.');
         }
-    } catch (DomainException $error) { flash($error->getMessage()); }
-      catch (Throwable $error) { error_log('Mindly: falha ao atualizar favoritos (' . get_class($error) . ').'); flash('Não foi possível atualizar seus favoritos. Tente novamente.'); }
+    } catch (DomainException $error) { flash($error->getMessage(), 'error'); }
+      catch (Throwable $error) { error_log('Mindly: falha ao atualizar favoritos (' . get_class($error) . ').'); flash('Não foi possível atualizar seus favoritos. Tente novamente.', 'error'); }
     redirect($back);
 }
 if (input('acao') === 'pagar_consulta') {
     try {
         PacienteController::pagamento($user);
     } catch (DomainException $error) {
-        flash($error->getMessage());
+        flash($error->getMessage(), 'error');
     } catch (Throwable $error) {
         error_log('Mindly: falha no pagamento simulado (' . get_class($error) . ').');
-        flash('Não foi possível registrar o pagamento. Tente novamente.');
+        flash('Não foi possível registrar o pagamento. Tente novamente.', 'error');
     }
     redirect('view/pagamentosPaciente.php');
 }
@@ -37,10 +37,10 @@ if (input('acao') === 'avaliar_consulta') {
     try {
         PacienteController::avaliar($user);
     } catch (DomainException $error) {
-        flash($error->getMessage());
+        flash($error->getMessage(), 'error');
     } catch (Throwable $error) {
         error_log('Mindly: falha ao registrar avaliacao (' . get_class($error) . ').');
-        flash("N\u{00E3}o foi poss\u{00ED}vel registrar sua avalia\u{00E7}\u{00E3}o. Tente novamente.");
+        flash("N\u{00E3}o foi poss\u{00ED}vel registrar sua avalia\u{00E7}\u{00E3}o. Tente novamente.", 'error');
     }
     redirect('view/minhasConsultas.php?aba=realizadas');
 }
@@ -52,10 +52,10 @@ try {
     PacienteController::perfil($user);
 } catch (Throwable $error) {
     if ($error instanceof DomainException)
-        flash($error->getMessage());
+        flash($error->getMessage(), 'error');
     else {
         error_log('Mindly: falha ao atualizar perfil do paciente (' . get_class($error) . ').');
-        flash('Não foi possível salvar seu perfil. Tente novamente.');
+        flash('Não foi possível salvar seu perfil. Tente novamente.', 'error');
     }
     $old = [];
     foreach (['nome', 'email', 'telefone', 'data_nascimento'] as $field)

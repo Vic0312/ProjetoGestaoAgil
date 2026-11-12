@@ -25,9 +25,9 @@ require_once __DIR__ . '/componentes/dados.php'; ?>
     <div class="rel-toolbar">
         <div><strong>Período analisado</strong><span><?= mindlyTime()->format('01/m/Y') ?> a
                 <?= mindlyTime()->format('t/m/Y') ?></span></div><button class="botao botao-secundario" disabled
-            title="Alteração de período ainda não disponível"><?= icon('calendar') ?> Alterar período</button><button
-            class="botao botao-principal" disabled title="Exportação ainda não disponível"><?= icon('download') ?>
-            Exportar</button>
+            title="Alteração de período ainda não disponível"><?= icon('calendar') ?> Alterar período</button><a
+            class="botao botao-principal" href="../processamento/exportar.php?tipo=relatorios"><?= icon('download') ?>
+            Exportar CSV</a>
     </div>
     <div class="kpis">
         <article class="cartao"><span>Taxa de
